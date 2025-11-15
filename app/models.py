@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+from datetime import datetime, date
+from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+import enum
+
+
+class Base(DeclarativeBase):
+    """Base for all models"""
+    pass
+
+
+class ReservationStatus(enum.Enum):
+    """Reservation Status"""
+    active = "active"
+    returned = "returned"
+    overdue = "overdue"
+
+
+class Role(Base):
+    """User roles: admin, user, manager, librarian etc."""
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+
+    users: Mapped[list["User"]] = relationship(back_populates="role")
+
+
+class User(Base):
+    """System users"""
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    phone: Mapped[str] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
+
+    role: Mapped[Role] = relationship(back_populates="users")
+    reservations: Mapped[list["Reservation"]] = relationship(back_populates="user")
+
+
+class Genre(Base):
+    """Book genres"""
+    __tablename__ = "genres"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+    books: Mapped[list["Book"]] = relationship(back_populates="genre")
+
+
+class Author(Base):
+    """Authors"""
+    __tablename__ = "authors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
+    nationality: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    books: Mapped[list["Book"]] = relationship(back_populates="author")
+
+
+class Book(Base):
+    """Books"""
+    __tablename__ = "books"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    isbn: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"))
+    genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="SET NULL"), nullable=True)
+    published_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+    author: Mapped[Author] = relationship(back_populates="books")
+    genre: Mapped[Genre | None] = relationship(back_populates="books")
+    reservations: Mapped[list["Reservation"]] = relationship(back_populates="book")
+
+
+class Reservation(Base):
+    """Book reservations"""
+    __tablename__ = "reservations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    reserve_date: Mapped[date] = mapped_column(Date, nullable=False, server_default=func.current_date())
+    return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status: Mapped[ReservationStatus] = mapped_column(
+        SQLEnum(ReservationStatus, native_enum=False),
+        nullable=False,
+        default=ReservationStatus.active,
+        server_default="active"
+    )
+
+    book: Mapped[Book] = relationship(back_populates="reservations")
+    user: Mapped[User] = relationship(back_populates="reservations")
