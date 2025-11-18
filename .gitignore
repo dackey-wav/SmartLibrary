@@ -19,3 +19,6 @@ alembic/versions/*.pyc
 
 app/__pycache__/
 app/models.pyc
+
+static/covers/
+data/

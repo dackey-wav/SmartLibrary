@@ -1,63 +1,28 @@
 # SmartLib DB Project
 
-## Requirements
-- Docker / Docker Compose
-- Python
-- Git
+## Getting Started Guide
 
-## Launching a web application
-...
+1. Clone Repository
 
-## Database development
+2. Copy paths templates from .env.example to .env and fill in correct data
 
-### Preparing the environment
+3. You can easily connect to a remote DB from CLI using the command ***./db-connect.ps1 owner*** or ***./db-connect.ps1 user*** (if don't specify a user, it will connect to the owner by default)
 
-1. Create a DB user:
-```bash
-cp db/init/01-user.sql.template db/init/01-user.sql
-```
-
-Edit `db/init/01-user.sql`, replacing:
-- `{{USERNAME}}` with your username (this can be your name)
-- `{{PASSWORD}}` with your password
-
-2. Copy the config template:
-```bash
-cp .env.example .env # CHANGE THE VALUES TO YOUR OWN
-cp docker-compose.override.yml.example docker-compose.override.yml # you need to know the password!!!
-```
-
-3. Run the container:
-```bash
-docker compose up -d
-```
-
-4. Install Python dependencies:
-```bash
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-5. Apply migrations:
-```bash
-alembic upgrade head
-```
-
-7. Connect to the database:
-```bash
-psql -h 127.0.0.1 -p 5433 -U {{USERNAME}} -d smartlib
-```
+4. ***coming soon...***
 
 ## Project structure
 ```
 DB_project/
 ├─ alembic/              # migrations
 ├─ app/
-│  └─ models.py          # ORM-models
-├─ db/init/              # init-scripts for Docker
-├─ docker-compose.yml
+│  ├─ models.py          # ORM-models
+|  └─ db.py
+├─scripts/
+|  └─ dataset.py         # dataset import script
+├─ static/
+|  └─ covers/            # local images for book covers
 ├─ .env.example
+├─ db-connect.ps1        # commands for connecting to DB
 ├─ requirements.txt
 └─ README.md
 ```

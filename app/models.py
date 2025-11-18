@@ -81,9 +81,13 @@ class Book(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     isbn: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
+    published_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    
+    cover_path: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
     author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"))
     genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="SET NULL"), nullable=True)
-    published_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
     author: Mapped[Author] = relationship(back_populates="books")
