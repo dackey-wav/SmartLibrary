@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Library OS - Dashboard</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            overflow: hidden;
+            margin: 0;
+            font-family: 'Space Mono', monospace; /* Тот самый шрифт */
+            color: white;
+        }
+        
+        /* Фон */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Glassmorphism утилиты */
+        .glass-panel {
+            background: rgba(10, 10, 12, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Скроллбар для контейнеров */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+
+        /* BounceCards Styles */
+        #cards-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Уменьшили высоту контейнера */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Убираем padding, так как позиционирование идет от центра через translate */
+        }
+
+        .ticket-card {
+            position: absolute;
+            /* Делаем их почти квадратными, как в оригинале */
+            width: 220px;
+            height: 240px; 
+            
+            background: rgba(18, 18, 23, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; /* Чуть больше скругление */
+            padding: 20px;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            overflow: hidden;
+            
+            /* Важно: в React коде transform-origin по умолчанию (center), возвращаем его */
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        /* При наведении увеличиваем z-index через класс, который будем добавлять JS-ом */
+        .ticket-card.is-hovered {
+            z-index: 50 !important;
+        }
+        
+        /* Эффект шума/сканирования на карточке (опционально) */
+        .ticket-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-4 md:p-8">
+
+    <canvas id="canvas-container"></canvas>
+
+    <div class="w-full max-w-7xl h-full grid grid-cols-12 gap-6 relative z-10">
+        
+        <aside class="col-span-12 md:col-span-3 flex flex-col justify-between glass-panel rounded-2xl p-6 h-full">
+            <div>
+                <div class="mb-12">
+                    <h1 class="text-4xl font-bold tracking-tighter leading-none mb-2">LIB<br>OS_</h1>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-xs text-white/40 tracking-widest">SYSTEM ONLINE</span>
+                    </div>
+                </div>
+
+                <nav class="space-y-1">
+                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">01</span>
+                        <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
+                    </a>
+                    <a href="#" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
+                        <span class="text-xs opacity-60 font-mono">02</span>
+                        <span class="text-sm tracking-wide font-bold">MY_LOANS</span>
+                    </a>
+                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
+                        <span class="text-sm tracking-wide">HISTORY_LOG</span>
+                    </a>
+                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">04</span>
+                        <span class="text-sm tracking-wide">AI_RECOMMEND</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="text-xs text-white/20 font-mono">
+                v2.0.4 // STABLE
+            </div>
+        </aside>
+
+
+        <main class="col-span-12 md:col-span-9 flex flex-col gap-6 h-full">
+            
+            <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24">
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span class="text-cyan-400">ALEX</span></h2>
+                    <p class="text-xs text-white/40 font-mono mt-1">ROLE: STUDENT // ID: #8821</p>
+                </div>
+                <div class="text-right">
+                     <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
+                     <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-8 flex-1 flex flex-col relative overflow-hidden">
+                <div class="flex justify-between items-end mb-4 relative z-20">
+                    <div>
+                        <h3 class="text-sm text-cyan-400 tracking-widest mb-1">ACTIVE RESERVATIONS</h3>
+                        <p class="text-xs text-white/40 max-w-md">
+                            Displaying 5 most recent active loans. <br>
+                            Hover to inspect ticket details.
+                        </p>
+                    </div>
+                    <button class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
+                        VIEW_FULL_LIST ->
+                    </button>
+                </div>
+
+                <div id="cards-container" class="mt-8"></div>
+                
+                <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6 h-32">
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
+                    <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-4xl font-bold">42</span>
+                        <span class="text-xs text-white/20">BOOKS</span>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
+                    <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-4xl font-bold">05</span>
+                        <span class="text-xs text-white/20">ACTIVE</span>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
+                    <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold truncate">SCI-FI</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('ru-RU');
+        }, 1000);
+    </script>
+
+<script>
+    // 1. Данные
+    const activeLoans = [
+        { title: "Dune", author: "Frank Herbert", genre: "Sci-Fi", date: "2023-12-15", status: "OVERDUE" },
+        { title: "Neuromancer", author: "William Gibson", genre: "Cyberpunk", date: "2023-12-20", status: "ACTIVE" },
+        { title: "Design Systems", author: "Alla Kholmatova", genre: "Design", date: "2023-12-25", status: "ACTIVE" },
+        { title: "1984", author: "George Orwell", genre: "Classic", date: "2023-12-28", status: "ACTIVE" },
+        { title: "Clean Code", author: "Robert Martin", genre: "Tech", date: "2024-01-05", status: "ACTIVE" }
+    ];
+
+    const container = document.getElementById('cards-container');
+
+    // 2. Настройки трансформации (Копия из твоего React кода)
+    const transformStyles = [
+        'rotate(10deg) translate(-170px)',
+        'rotate(5deg) translate(-85px)',
+        'rotate(0deg) translate(0px)', // Центральная карта
+        'rotate(-5deg) translate(85px)',
+        'rotate(-10deg) translate(170px)'
+    ];
+
+    // Хелпер для цветов
+    const getGenreColor = (genre) => {
+        const map = { 'Sci-Fi': '#22d3ee', 'Cyberpunk': '#f472b6', 'Design': '#facc15', 'Classic': '#94a3b8', 'Tech': '#4ade80' };
+        return map[genre] || '#ffffff';
+    };
+
+    // --- ЛОГИКА ИЗ REACT КОМПОНЕНТА ---
+
+    // Убирает rotation из строки transform
+    const getNoRotationTransform = (transformStr) => {
+        const hasRotate = /rotate\([\s\S]*?\)/.test(transformStr);
+        if (hasRotate) {
+            return transformStr.replace(/rotate\([\s\S]*?\)/, 'rotate(0deg)');
+        } else if (transformStr === 'none') {
+            return 'rotate(0deg)';
+        } else {
+            return `${transformStr} rotate(0deg)`;
+        }
+    };
+
+    // Вычисляет новый translate, добавляя offsetX
+    const getPushedTransform = (baseTransform, offsetX) => {
+        const translateRegex = /translate\(([-0-9.]+)px\)/;
+        const match = baseTransform.match(translateRegex);
+        
+        if (match) {
+            const currentX = parseFloat(match[1]);
+            const newX = currentX + offsetX;
+            return baseTransform.replace(translateRegex, `translate(${newX}px)`);
+        } else {
+            // Если translate не было, добавляем его (хотя в нашем массиве он везде есть, кроме центра может быть)
+            return baseTransform === 'none' 
+                ? `translate(${offsetX}px)` 
+                : `${baseTransform} translate(${offsetX}px)`;
+        }
+    };
+
+    // Главная функция анимации при наведении
+    const pushSiblings = (hoveredIdx) => {
+        activeLoans.forEach((_, i) => {
+            if (i >= 5) return;
+            const el = document.querySelector(`.card-${i}`);
+            // Останавливаем предыдущие анимации для этого элемента
+            gsap.killTweensOf(el);
+
+            const baseTransform = transformStyles[i] || 'none';
+
+            // Если это карта, на которую навели
+            if (i === hoveredIdx) {
+                el.classList.add('is-hovered'); // Поднимаем z-index
+                const noRotation = getNoRotationTransform(baseTransform);
+                
+                gsap.to(el, {
+                    transform: noRotation,
+                    scale: 1.1, // Чуть увеличиваем
+                    duration: 0.4,
+                    ease: 'back.out(1.4)',
+                    overwrite: 'auto'
+                });
+            } 
+            // Соседние карты
+            else {
+                el.classList.remove('is-hovered');
+                // Логика сдвига: если левее -160px, если правее +160px
+                const offsetX = i < hoveredIdx ? -160 : 160;
+                const pushedTransform = getPushedTransform(baseTransform, offsetX);
+                
+                // Расчет задержки (stagger эффект)
+                const distance = Math.abs(hoveredIdx - i);
+                const delay = distance * 0.05;
+
+                gsap.to(el, {
+                    transform: pushedTransform,
+                    scale: 0.9, // Чуть уменьшаем соседей для акцента
+                    duration: 0.4,
+                    ease: 'back.out(1.4)',
+                    delay: delay,
+                    overwrite: 'auto'
+                });
+            }
+        });
+    };
+
+    // Сброс при уходе мыши
+    const resetSiblings = () => {
+        activeLoans.forEach((_, i) => {
+            if (i >= 5) return;
+            const el = document.querySelector(`.card-${i}`);
+            el.classList.remove('is-hovered');
+            
+            gsap.killTweensOf(el);
+            
+            const baseTransform = transformStyles[i] || 'none';
+            
+            gsap.to(el, {
+                transform: baseTransform,
+                scale: 1,
+                duration: 0.4,
+                ease: 'back.out(1.4)',
+                overwrite: 'auto'
+            });
+        });
+    };
+
+    // Инициализация
+    function initCards() {
+        container.innerHTML = '';
+        
+        activeLoans.forEach((book, i) => {
+            if(i >= 5) return;
+
+            const el = document.createElement('div');
+            el.className = `ticket-card card-${i}`;
+            // Устанавливаем начальное состояние сразу
+            el.style.transform = transformStyles[i];
+            // Ставим z-index лесенкой, чтобы при сбросе они правильно перекрывались
+            // В центре (i=2) самый высокий, по краям ниже
+            // Или просто линейно, как в react коде (там z-index не трогают, полагаясь на DOM order)
+            // Но для красоты лучше так:
+            el.style.zIndex = i + 1; 
+
+            const color = getGenreColor(book.genre);
+            const statusColor = book.status === 'OVERDUE' ? 'text-red-500 animate-pulse' : 'text-green-400';
+
+            el.innerHTML = `
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: ${color}; box-shadow: 0 0 10px ${color};"></div>
+                
+                <div class="mt-2 flex justify-between items-start">
+                     <span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${book.genre.toUpperCase()}</span>
+                     <div class="w-1.5 h-1.5 rounded-full ${book.status === 'OVERDUE' ? 'bg-red-500 box-shadow-red' : 'bg-green-500 box-shadow-green'}"></div>
+                </div>
+
+                <div class="flex flex-col justify-center flex-grow">
+                    <h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4>
+                    <p class="text-[11px] text-white/40 font-mono">${book.author}</p>
+                </div>
+
+                <div class="border-t border-white/10 pt-3 flex justify-between items-end">
+                    <div>
+                        <span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span>
+                        <span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span>
+                    </div>
+                    <span class="text-[9px] text-white/10 font-mono">#0${i+1}</span>
+                </div>
+            `;
+
+            // События
+            el.addEventListener('mouseenter', () => pushSiblings(i));
+            // Добавляем событие на контейнер для сброса, чтобы "дыры" между картами не дергали анимацию
+            
+            container.appendChild(el);
+        });
+
+        // Сброс вешаем на контейнер, когда мышь уходит совсем
+        container.addEventListener('mouseleave', resetSiblings);
+    }
+
+    initCards();
+</script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+        const configWave = {
+            waveSpeed: 0.05,
+            waveFrequency: 3,
+            waveAmplitude: 0.3,
+            waveColor: new THREE.Color(0.85, 0.85, 0.9), 
+            colorNum: 4.0,
+            pixelSize: 2.0,
+            mouseRadius: 0.35
+        };
+
+        const waveVertexShader = `
+            precision highp float;
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+                vec4 viewPosition = viewMatrix * modelPosition;
+                gl_Position = projectionMatrix * viewPosition;
+            }
+        `;
+
+        const waveFragmentShader = `
+            precision highp float;
+            uniform vec2 resolution;
+            uniform float time;
+            uniform float waveSpeed;
+            uniform float waveFrequency;
+            uniform float waveAmplitude;
+            uniform vec3 waveColor;
+            uniform vec2 mousePos;
+            uniform int enableMouseInteraction;
+            uniform float mouseRadius;
+
+            // Simplex Noise functions omitted for brevity (standard implementation)
+            vec4 mod289(vec4 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+            vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
+            vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+            vec2 fade(vec2 t) { return t*t*t*(t*(t*6.0-15.0)+10.0); }
+
+            float cnoise(vec2 P) {
+                vec4 Pi = floor(P.xyxy) + vec4(0.0,0.0,1.0,1.0);
+                vec4 Pf = fract(P.xyxy) - vec4(0.0,0.0,1.0,1.0);
+                Pi = mod289(Pi);
+                vec4 ix = Pi.xzxz;
+                vec4 iy = Pi.yyww;
+                vec4 fx = Pf.xzxz;
+                vec4 fy = Pf.yyww;
+                vec4 i = permute(permute(ix) + iy);
+                vec4 gx = fract(i * (1.0/41.0)) * 2.0 - 1.0;
+                vec4 gy = abs(gx) - 0.5;
+                vec4 tx = floor(gx + 0.5);
+                gx = gx - tx;
+                vec2 g00 = vec2(gx.x, gy.x);
+                vec2 g10 = vec2(gx.y, gy.y);
+                vec2 g01 = vec2(gx.z, gy.z);
+                vec2 g11 = vec2(gx.w, gy.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(g00,g00), dot(g01,g01), dot(g10,g10), dot(g11,g11)));
+                g00 *= norm.x; g01 *= norm.y; g10 *= norm.z; g11 *= norm.w;
+                float n00 = dot(g00, vec2(fx.x, fy.x));
+                float n10 = dot(g10, vec2(fx.y, fy.y));
+                float n01 = dot(g01, vec2(fx.z, fy.z));
+                float n11 = dot(g11, vec2(fx.w, fy.w));
+                vec2 fade_xy = fade(Pf.xy);
+                vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+                return 2.3 * mix(n_x.x, n_x.y, fade_xy.y);
+            }
+
+            const int OCTAVES = 4;
+            float fbm(vec2 p) {
+                float value = 0.0;
+                float amp = 1.0;
+                float freq = waveFrequency;
+                for (int i = 0; i < OCTAVES; i++) {
+                    value += amp * abs(cnoise(p));
+                    p *= freq;
+                    amp *= waveAmplitude;
+                }
+                return value;
+            }
+
+            float pattern(vec2 p) {
+                vec2 p2 = p - time * waveSpeed;
+                return fbm(p + fbm(p2)); 
+            }
+
+            void main() {
+                vec2 uv = gl_FragCoord.xy / resolution.xy;
+                uv -= 0.5;
+                uv.x *= resolution.x / resolution.y;
+                float f = pattern(uv);
+                
+                if (enableMouseInteraction == 1) {
+                    vec2 mouseNDC = (mousePos / resolution - 0.5) * vec2(1.0, -1.0);
+                    mouseNDC.x *= resolution.x / resolution.y;
+                    float dist = length(uv - mouseNDC);
+                    float effect = 1.0 - smoothstep(0.0, mouseRadius, dist);
+                    f -= 0.15 * effect; 
+                }
+                vec3 col = mix(vec3(0.0), waveColor, f);
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        const ditherFragmentShader = `
+            precision highp float;
+            uniform float colorNum;
+            uniform float pixelSize;
+            uniform vec2 resolution;
+            uniform sampler2D tDiffuse;
+            varying vec2 vUv;
+
+            const float bayerMatrix8x8[64] = float[64](
+                0.0/64.0, 48.0/64.0, 12.0/64.0, 60.0/64.0,  3.0/64.0, 51.0/64.0, 15.0/64.0, 63.0/64.0,
+                32.0/64.0,16.0/64.0, 44.0/64.0, 28.0/64.0, 35.0/64.0,19.0/64.0, 47.0/64.0, 31.0/64.0,
+                8.0/64.0, 56.0/64.0,  4.0/64.0, 52.0/64.0, 11.0/64.0,59.0/64.0,  7.0/64.0, 55.0/64.0,
+                40.0/64.0,24.0/64.0, 36.0/64.0, 20.0/64.0, 43.0/64.0,27.0/64.0, 39.0/64.0, 23.0/64.0,
+                2.0/64.0, 50.0/64.0, 14.0/64.0, 62.0/64.0,  1.0/64.0,49.0/64.0, 13.0/64.0, 61.0/64.0,
+                34.0/64.0,18.0/64.0, 46.0/64.0, 30.0/64.0, 33.0/64.0,17.0/64.0, 45.0/64.0, 29.0/64.0,
+                10.0/64.0,58.0/64.0,  6.0/64.0, 54.0/64.0,  9.0/64.0,57.0/64.0,  5.0/64.0, 53.0/64.0,
+                42.0/64.0,26.0/64.0, 38.0/64.0, 22.0/64.0, 41.0/64.0,25.0/64.0, 37.0/64.0, 21.0/64.0
+            );
+
+            vec3 dither(vec2 uv, vec3 color) {
+                vec2 scaledCoord = floor(uv * resolution / pixelSize);
+                int x = int(mod(scaledCoord.x, 8.0));
+                int y = int(mod(scaledCoord.y, 8.0));
+                float threshold = bayerMatrix8x8[y * 8 + x] - 0.25;
+                float step = 1.0 / (colorNum - 1.0);
+                color += threshold * step;
+                float bias = 0.2;
+                color = clamp(color - bias, 0.0, 1.0);
+                return floor(color * (colorNum - 1.0) + 0.5) / (colorNum - 1.0);
+            }
+
+            void main() {
+                vec4 color = texture2D(tDiffuse, vUv);
+                color.rgb = dither(vUv, color.rgb);
+                gl_FragColor = color;
+            }
+        `;
+
+        const canvas = document.querySelector('#canvas-container');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(1);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 6;
+
+        const waveUniforms = {
+            time: { value: 0 },
+            resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            waveSpeed: { value: configWave.waveSpeed },
+            waveFrequency: { value: configWave.waveFrequency },
+            waveAmplitude: { value: configWave.waveAmplitude },
+            waveColor: { value: configWave.waveColor },
+            mousePos: { value: new THREE.Vector2(0, 0) },
+            enableMouseInteraction: { value: 1 },
+            mouseRadius: { value: configWave.mouseRadius }
+        };
+
+        const planeGeo = new THREE.PlaneGeometry(50, 50); 
+        const waveMat = new THREE.ShaderMaterial({
+            vertexShader: waveVertexShader,
+            fragmentShader: waveFragmentShader,
+            uniforms: waveUniforms
+        });
+        const plane = new THREE.Mesh(planeGeo, waveMat);
+        scene.add(plane);
+
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const ditherPass = new ShaderPass({
+            uniforms: {
+                tDiffuse: { value: null },
+                colorNum: { value: configWave.colorNum },
+                pixelSize: { value: configWave.pixelSize },
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            },
+            vertexShader: waveVertexShader,
+            fragmentShader: ditherFragmentShader
+        });
+        composer.addPass(ditherPass);
+
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            composer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            waveUniforms.resolution.value.set(width, height);
+            ditherPass.uniforms.resolution.value.set(width, height);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            waveUniforms.mousePos.value.set(e.clientX, e.clientY);
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            waveUniforms.time.value = clock.getElapsedTime();
+            composer.render();
+        }
+        animate();
+    </script>
+</body>
+</html>
