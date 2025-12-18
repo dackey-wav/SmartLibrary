@@ -104,6 +104,131 @@
             background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
             pointer-events: none;
         }
+        
+        #view-dashboard, #view-catalog {
+            /* Изолируем слои для GPU */
+            will-change: opacity, transform;
+            /* Убираем дрожание текста при анимации */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* Аппаратное ускорение */
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        /* Исправление скролла внутри абсолютного элемента */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+
+        /* Оптимизация для карточек каталога */
+        .catalog-card {
+            will-change: transform, opacity;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .filter-chip {
+            padding: 6px 16px;
+            border-radius: 99px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem; /* text-xs */
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .filter-chip:hover {
+            border-color: #22d3ee;
+            color: #22d3ee;
+        }
+
+        .filter-chip.active {
+            background: #22d3ee;
+            border-color: #22d3ee;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+        }
+
+        /* ... твои старые стили ... */
+        /* DROPDOWN STYLES */
+        .dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dropdown-btn:hover, .dropdown-btn.active {
+            border-color: #22d3ee;
+            color: #22d3ee;
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+            width: 200px;
+            max-height: 240px;
+            overflow-y: auto;
+            background: rgba(10, 10, 15, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 50;
+        }
+
+        .dropdown-menu.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            text-align: left;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .dropdown-item.selected {
+            color: #22d3ee;
+            background: rgba(34, 211, 238, 0.05);
+        }
+
+        /* Scrollbar для дропдауна */
+        .dropdown-menu::-webkit-scrollbar { width: 4px; }
+        .dropdown-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
     </style>
 </head>
 <body class="h-screen w-screen flex items-center justify-center p-4 md:p-8">
@@ -150,81 +275,97 @@
         </aside>
 
 
-        <main class="col-span-12 md:col-span-9 flex flex-col gap-6 h-full relative overflow-hidden">
-        
-        <div id="view-dashboard" class="flex flex-col gap-6 h-full transition-all duration-500">
-            <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24">
-                <div>
-                    <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">...</span></h2>
-                    <p id="user-details" class="text-xs text-white/40 font-mono mt-1">ROLE: ... // ID: ...</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
-                    <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
-                </div>
-            </div>
+        <main class="col-span-12 md:col-span-9 h-full relative overflow-hidden">
+    
+        <div id="content-stack" class="relative w-full h-full">
 
-            <div class="glass-panel rounded-2xl p-8 flex-1 flex flex-col relative overflow-hidden">
-                <div class="flex justify-between items-end mb-4 relative z-20">
+            <div id="view-dashboard" class="absolute inset-0 flex flex-col gap-6 transition-none">
+                <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24 shrink-0">
                     <div>
-                        <h3 class="text-sm text-cyan-400 tracking-widest mb-1">ACTIVE RESERVATIONS</h3>
-                        <p class="text-xs text-white/40 max-w-md">
-                            Displaying 5 most recent active loans. <br>
-                            Hover to inspect ticket details.
-                        </p>
+                        <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">...</span></h2>
+                        <p id="user-details" class="text-xs text-white/40 font-mono mt-1">ROLE: ... // ID: ...</p>
                     </div>
-                    <button onclick="switchView('catalog')" class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
-                        BROWSE_CATALOG ->
-                    </button>
+                    <div class="text-right">
+                        <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
+                        <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
+                    </div>
                 </div>
 
-                <div id="cards-container" class="mt-8"></div>
-                <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
-            </div>
+                <div class="glass-panel rounded-2xl p-8 flex-1 flex flex-col relative overflow-hidden">
+                    <div class="flex justify-between items-end mb-4 relative z-20">
+                        <div>
+                            <h3 class="text-sm text-cyan-400 tracking-widest mb-1">ACTIVE RESERVATIONS</h3>
+                            <p class="text-xs text-white/40 max-w-md">Displaying 5 most recent active loans.<br>Hover to inspect ticket details.</p>
+                        </div>
+                        <button onclick="switchView('catalog')" class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
+                            BROWSE_CATALOG ->
+                        </button>
+                    </div>
+                    <div id="cards-container" class="mt-8 flex justify-center items-center"></div>
+                    <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+                </div>
 
-            <div class="grid grid-cols-3 gap-6 h-32">
-                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
-                    <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-4xl font-bold">42</span>
-                        <span class="text-xs text-white/20">BOOKS</span>
+                <div class="grid grid-cols-3 gap-6 h-32 shrink-0">
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
+                        <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
+                        <div class="flex items-baseline gap-2"><span class="text-4xl font-bold">42</span><span class="text-xs text-white/20">BOOKS</span></div>
                     </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
-                    <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-4xl font-bold">05</span>
-                        <span class="text-xs text-white/20">ACTIVE</span>
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
+                        <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
+                        <div class="flex items-baseline gap-2"><span class="text-4xl font-bold">05</span><span class="text-xs text-white/20">ACTIVE</span></div>
                     </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
-                    <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-2xl font-bold truncate">SCI-FI</span>
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
+                        <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
+                        <div class="flex items-baseline gap-2"><span class="text-2xl font-bold truncate">SCI-FI</span></div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div id="view-catalog" class="hidden flex-col gap-6 h-full absolute top-0 left-0 w-full bg-transparent transition-all duration-500">
-            
-            <div class="glass-panel rounded-2xl p-6 flex flex-col justify-center h-32 shrink-0">
-                <label class="text-xs text-cyan-400 font-mono mb-2 tracking-widest">DATABASE_QUERY</label>
-                <div class="relative w-full">
-                    <input type="text" id="search-input" 
-                        class="w-full bg-transparent border-b border-white/20 py-2 text-2xl font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20"
-                        placeholder="ENTER BOOK TITLE OR AUTHOR..." autocomplete="off">
-                    <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 animate-pulse">_</div>
                 </div>
             </div>
 
-            <div class="glass-panel rounded-2xl p-6 flex-1 overflow-y-auto relative">
-                <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-10">
-                    </div>
+            <div id="view-catalog" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none">
                 
-                <div class="sticky bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+                <div class="glass-panel rounded-2xl p-6 flex flex-col justify-center h-40 shrink-0 gap-4 relative z-20"> <div>
+                        <label class="text-xs text-cyan-400 font-mono mb-2 tracking-widest">DATABASE_QUERY</label>
+                        <div class="relative w-full">
+                            <input type="text" id="search-input" 
+                                class="w-full bg-transparent border-b border-white/20 py-2 text-2xl font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20"
+                                placeholder="ENTER KEYWORDS..." autocomplete="off">
+                            <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 animate-pulse">_</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Filter by:</span>
+                        
+                        <div class="relative group-dropdown">
+                            <button id="btn-genre" class="dropdown-btn" onclick="toggleDropdown('genre')">
+                                <span>GENRE</span>
+                                <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="dropdown-genre" class="dropdown-menu"></div>
+                        </div>
+
+                        <div class="relative group-dropdown">
+                            <button id="btn-author" class="dropdown-btn" onclick="toggleDropdown('author')">
+                                <span>AUTHOR</span>
+                                <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="dropdown-author" class="dropdown-menu"></div>
+                        </div>
+
+                        <button id="btn-reset" onclick="resetFilters()" class="hidden text-[10px] text-red-400 hover:text-red-300 ml-auto uppercase tracking-wide">
+                            [X] RESET_FILTERS
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 flex-1 overflow-y-auto relative custom-scrollbar z-10">
+                    <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-10">
+                        </div>
+                    <div class="sticky bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+                </div>
             </div>
         </div>
-        </main>
+    </main>
     </div>
 
     <script>
@@ -620,130 +761,258 @@ document.addEventListener('DOMContentLoaded', fetchAndRender);
     </script>
 
     <script>
-    // --- ЛОГИКА НАВИГАЦИИ ---
-    function switchView(viewName) {
-        const dashboard = document.getElementById('view-dashboard');
-        const catalog = document.getElementById('view-catalog');
-        const navDashboard = document.getElementById('nav-dashboard');
-        const navCatalog = document.getElementById('nav-catalog');
+        // Глобальные ссылки
+        const views = {
+            dashboard: document.getElementById('view-dashboard'),
+            catalog: document.getElementById('view-catalog')
+        };
+        const navs = {
+            dashboard: document.getElementById('nav-dashboard'),
+            catalog: document.getElementById('nav-catalog')
+        };
 
-        // Стили активной кнопки меню
         const activeClass = "text-cyan-400 bg-white/5 border-l-2 border-cyan-400 font-bold";
         const inactiveClass = "text-white/60 hover:text-cyan-400 hover:bg-white/5";
 
-        if (viewName === 'catalog') {
-            // Анимация скрытия дашборда
-            gsap.to(dashboard, { 
-                autoAlpha: 0, 
-                y: -20, 
-                duration: 0.3, 
-                onComplete: () => {
-                    dashboard.classList.add('hidden');
-                    catalog.classList.remove('hidden');
-                    // Анимация появления каталога
-                    gsap.fromTo(catalog, 
-                        { autoAlpha: 0, y: 20 }, 
-                        { autoAlpha: 1, y: 0, duration: 0.4 }
-                    );
-                    renderCatalog(); // Рендерим книги при открытии
-                }
-            });
+        // Состояние приложения
+        let booksData = []; 
+        let isCatalogReady = false;
+        
+        // Состояние фильтров
+        let filters = {
+            genre: null,
+            author: null,
+            search: ""
+        };
 
-            // Обновляем меню
-            navCatalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
-            navDashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
-            
-            // Фокус на поиск
-            setTimeout(() => document.getElementById('search-input').focus(), 400);
+        // --- 1. ЗАГРУЗКА ДАННЫХ ---
+        async function fetchBooks() {
+            try {
+                // Фейковая задержка для теста (удали потом)
+                // await new Promise(r => setTimeout(r, 500)); 
+                
+                const response = await fetch('/api/books'); 
+                if (!response.ok) throw new Error('Network response');
+                const data = await response.json();
+                
+                booksData = data.map(book => ({
+                    id: book.id,
+                    title: book.title,
+                    author: book.author_name || book.author || "Unknown", 
+                    genre: book.genre_name || book.genre || "Other",
+                    image: book.cover_path || `https://picsum.photos/id/${book.id % 50}/300/450?grayscale` 
+                }));
 
-        } else {
-            // Обратная анимация
-            gsap.to(catalog, { 
-                autoAlpha: 0, 
-                y: -20, 
-                duration: 0.3, 
-                onComplete: () => {
-                    catalog.classList.add('hidden');
-                    dashboard.classList.remove('hidden');
-                    gsap.fromTo(dashboard, 
-                        { autoAlpha: 0, y: 20 }, 
-                        { autoAlpha: 1, y: 0, duration: 0.4 }
-                    );
-                }
-            });
-
-            navDashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
-            navCatalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
-        }
-    }
-
-    // --- ТЕСТОВЫЕ ДАННЫЕ КАТАЛОГА ---
-    // Я использую Picsum Photos с черно-белым фильтром для стиля
-    const mockCatalog = [
-        { id: 1, title: "The Pragmatic Programmer", author: "Andy Hunt", genre: "Education", image: "https://picsum.photos/id/1/300/450?grayscale" },
-        { id: 2, title: "Dune", author: "Frank Herbert", genre: "Sci-Fi", image: "https://picsum.photos/id/10/300/450?grayscale" },
-        { id: 3, title: "Neuromancer", author: "William Gibson", genre: "Cyberpunk", image: "https://picsum.photos/id/20/300/450?grayscale" },
-        { id: 4, title: "Clean Code", author: "Robert C. Martin", genre: "Tech", image: "https://picsum.photos/id/3/300/450?grayscale" },
-        { id: 5, title: "Foundation", author: "Isaac Asimov", genre: "Sci-Fi", image: "https://picsum.photos/id/40/300/450?grayscale" },
-        { id: 6, title: "Snow Crash", author: "Neal Stephenson", genre: "Cyberpunk", image: "https://picsum.photos/id/50/300/450?grayscale" },
-        { id: 7, title: "Refactoring", author: "Martin Fowler", genre: "Tech", image: "https://picsum.photos/id/60/300/450?grayscale" },
-        { id: 8, title: "Hyperion", author: "Dan Simmons", genre: "Sci-Fi", image: "https://picsum.photos/id/70/300/450?grayscale" },
-    ];
-
-    function renderCatalog(filterText = "") {
-        const grid = document.getElementById('catalog-grid');
-        grid.innerHTML = '';
-
-        // Фильтрация
-        const filtered = mockCatalog.filter(book => 
-            book.title.toLowerCase().includes(filterText.toLowerCase()) || 
-            book.author.toLowerCase().includes(filterText.toLowerCase())
-        );
-
-        if(filtered.length === 0) {
-            grid.innerHTML = `<div class="col-span-full text-center text-white/30 py-10 font-mono">NO DATA FOUND // QUERY_EMPTY</div>`;
-            return;
+                initDropdowns(); // Генерируем фильтры на основе данных
+                renderCatalog();
+                
+            } catch (error) {
+                console.error("Error loading books:", error);
+                // Если ошибка, используем мок-данные чтобы интерфейс не был пустым (для теста)
+                useMockData();
+            }
         }
 
-        filtered.forEach((book, i) => {
-            const card = document.createElement('div');
-            // Стили карточки книги
-            card.className = "group relative aspect-[2/3] bg-black/40 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-400/50 transition-all cursor-pointer catalog-card";
+        function useMockData() {
+            booksData = [
+                { id: 1, title: "The Pragmatic Programmer", author: "Andy Hunt", genre: "Education", image: "https://picsum.photos/id/1/300/450?grayscale" },
+                { id: 2, title: "Dune", author: "Frank Herbert", genre: "Sci-Fi", image: "https://picsum.photos/id/10/300/450?grayscale" },
+                { id: 3, title: "Neuromancer", author: "William Gibson", genre: "Cyberpunk", image: "https://picsum.photos/id/20/300/450?grayscale" },
+                { id: 4, title: "Clean Code", author: "Robert C. Martin", genre: "Tech", image: "https://picsum.photos/id/3/300/450?grayscale" },
+                { id: 5, title: "Foundation", author: "Isaac Asimov", genre: "Sci-Fi", image: "https://picsum.photos/id/40/300/450?grayscale" },
+            ];
+            initDropdowns();
+            renderCatalog();
+        }
+
+        // --- 2. ЛОГИКА DROPDOWNS ---
+        function initDropdowns() {
+            // Извлекаем уникальные значения
+            const uniqueGenres = [...new Set(booksData.map(b => b.genre))].sort();
+            const uniqueAuthors = [...new Set(booksData.map(b => b.author))].sort();
+
+            populateList('dropdown-genre', uniqueGenres, 'genre');
+            populateList('dropdown-author', uniqueAuthors, 'author');
+        }
+
+        function populateList(elementId, items, type) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
             
-            card.innerHTML = `
-                <img src="${book.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
-                
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
-                
-                <div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">
-                        ${book.genre.toUpperCase()}
-                    </span>
-                    <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
-                    <p class="text-xs text-white/50 font-mono line-clamp-1">${book.author}</p>
-                    
-                    <button class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">
-                        RESERVE_
-                    </button>
-                </div>
-                
-                <div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
-            `;
+            // Опция "Все"
+            const allItem = document.createElement('div');
+            allItem.className = 'dropdown-item';
+            allItem.innerText = 'ALL';
+            allItem.onclick = () => applyFilter(type, null);
+            container.appendChild(allItem);
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'dropdown-item';
+                el.innerText = item.toUpperCase();
+                el.onclick = () => applyFilter(type, item);
+                container.appendChild(el);
+            });
+        }
+
+        function toggleDropdown(type) {
+            // Закрываем все остальные
+            const allDrops = document.querySelectorAll('.dropdown-menu');
+            const targetId = `dropdown-${type}`;
             
-            grid.appendChild(card);
+            allDrops.forEach(el => {
+                if (el.id === targetId) el.classList.toggle('open');
+                else el.classList.remove('open');
+            });
+        }
+
+        // Закрытие при клике вне
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.group-dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('open'));
+            }
         });
 
-        // Анимация появления карточек
-        gsap.fromTo(".catalog-card", 
-            { y: 20, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power2.out", clearProps: "all" }
-        );
-    }
+        function applyFilter(type, value) {
+            filters[type] = value;
+            
+            // Обновляем текст кнопки
+            const btn = document.getElementById(`btn-${type}`);
+            const label = btn.querySelector('span');
+            
+            if (value) {
+                label.innerText = value.toUpperCase();
+                btn.classList.add('active');
+            } else {
+                label.innerText = type.toUpperCase();
+                btn.classList.remove('active');
+            }
 
-    // Слушатель поиска
-    document.getElementById('search-input').addEventListener('input', (e) => {
-        renderCatalog(e.target.value);
-    });
+            // Показываем сброс если есть фильтры
+            const resetBtn = document.getElementById('btn-reset');
+            if (filters.genre || filters.author) resetBtn.classList.remove('hidden');
+            else resetBtn.classList.add('hidden');
+
+            renderCatalog();
+        }
+
+        function resetFilters() {
+            applyFilter('genre', null);
+            applyFilter('author', null);
+            document.getElementById('search-input').value = '';
+            filters.search = '';
+            renderCatalog();
+        }
+
+        // --- 3. НАВИГАЦИЯ (ИСПРАВЛЕНАЯ) ---
+        function switchView(target) {
+            const isCatalogTarget = target === 'catalog';
+            if (isCatalogTarget && views.catalog.style.opacity === '1') return;
+            if (!isCatalogTarget && views.dashboard.style.opacity === '1') return;
+
+            if (isCatalogTarget && booksData.length === 0) fetchBooks();
+
+            const tl = gsap.timeline({ defaults: { duration: 0.4, ease: "power2.inOut" } });
+
+            if (isCatalogTarget) {
+                // ВКЛЮЧАЕМ КАТАЛОГ
+                views.catalog.classList.remove('pointer-events-none');
+                views.catalog.classList.add('pointer-events-auto');
+                
+                views.dashboard.classList.remove('pointer-events-auto');
+                views.dashboard.classList.add('pointer-events-none');
+
+                tl.to(views.dashboard, { autoAlpha: 0, scale: 0.98 })
+                .fromTo(views.catalog, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
+                
+                setTimeout(() => document.getElementById('search-input').focus(), 100);
+            } else {
+                // ВКЛЮЧАЕМ ДАШБОРД
+                views.dashboard.classList.remove('pointer-events-none');
+                views.dashboard.classList.add('pointer-events-auto');
+                
+                views.catalog.classList.remove('pointer-events-auto');
+                views.catalog.classList.add('pointer-events-none');
+
+                tl.to(views.catalog, { autoAlpha: 0, scale: 0.98 })
+                .fromTo(views.dashboard, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
+            }
+            updateNav(target);
+        }
+
+        function updateNav(active) {
+            if (active === 'catalog') {
+                navs.catalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
+                navs.dashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
+            } else {
+                navs.dashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
+                navs.catalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
+            }
+        }
+
+        // --- 4. РЕНДЕР КАТАЛОГА ---
+        function renderCatalog() {
+            const grid = document.getElementById('catalog-grid');
+            grid.innerHTML = '';
+
+            // Тройная фильтрация: Поиск + Автор + Жанр
+            const filtered = booksData.filter(book => {
+                const matchesSearch = filters.search === "" || 
+                                    book.title.toLowerCase().includes(filters.search.toLowerCase()) || 
+                                    book.author.toLowerCase().includes(filters.search.toLowerCase());
+                
+                const matchesGenre = !filters.genre || book.genre === filters.genre;
+                const matchesAuthor = !filters.author || book.author === filters.author;
+
+                return matchesSearch && matchesGenre && matchesAuthor;
+            });
+
+            if(filtered.length === 0) {
+                const message = booksData.length === 0 ? "CONNECTING TO DATABASE..." : "NO DATA FOUND // TERMINAL_EMPTY";
+                grid.innerHTML = `<div class="col-span-full text-center text-white/30 py-10 font-mono animate-pulse">${message}</div>`;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            filtered.forEach((book) => {
+                const card = document.createElement('div');
+                card.className = "group relative aspect-[2/3] bg-black/40 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-400/50 transition-all cursor-pointer catalog-card";
+                card.innerHTML = `
+                    <img src="${book.image}" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
+                    <div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">${book.genre.toUpperCase()}</span>
+                        <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
+                        <p class="text-xs text-white/50 font-mono line-clamp-1">${book.author}</p>
+                        <button class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>
+                    </div>
+                    <div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                `;
+                fragment.appendChild(card);
+            });
+            grid.appendChild(fragment);
+            
+            // Легкая анимация при обновлении
+            gsap.fromTo(".catalog-card", 
+                { y: 10, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 0.3, stagger: 0.02, ease: "power2.out", clearProps: "all" }
+            );
+        }
+
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filters.search = e.target.value;
+                renderCatalog();
+            }, 300);
+        });
+        
+        // STARTUP
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchBooks();
+            isCatalogReady = true;
+        });
     </script>
 
 </body>
