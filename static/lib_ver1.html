@@ -122,23 +122,25 @@
                     </div>
                 </div>
 
-                <nav class="space-y-1">
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">01</span>
-                        <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
-                        <span class="text-xs opacity-60 font-mono">02</span>
-                        <span class="text-sm tracking-wide font-bold">MY_LOANS</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
-                        <span class="text-sm tracking-wide">HISTORY_LOG</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">04</span>
-                        <span class="text-sm tracking-wide">AI_RECOMMEND</span>
-                    </a>
+                    <nav class="space-y-1">
+                        <a href="#" onclick="switchView('catalog'); return false;" id="nav-catalog" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">01</span>
+                            <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
+                        </a>
+                        
+                        <a href="#" onclick="switchView('dashboard'); return false;" id="nav-dashboard" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
+                            <span class="text-xs opacity-60 font-mono">02</span>
+                            <span class="text-sm tracking-wide font-bold">MY_LOANS</span>
+                        </a>
+                        
+                        <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
+                            <span class="text-sm tracking-wide">HISTORY_LOG</span>
+                        </a>
+                        <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">04</span>
+                            <span class="text-sm tracking-wide">AI_RECOMMEND</span>
+                        </a>
                 </nav>
             </div>
 
@@ -148,16 +150,17 @@
         </aside>
 
 
-        <main class="col-span-12 md:col-span-9 flex flex-col gap-6 h-full">
-            
+        <main class="col-span-12 md:col-span-9 flex flex-col gap-6 h-full relative overflow-hidden">
+        
+        <div id="view-dashboard" class="flex flex-col gap-6 h-full transition-all duration-500">
             <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24">
                 <div>
-                    <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span class="text-cyan-400">ALEX</span></h2>
-                    <p class="text-xs text-white/40 font-mono mt-1">ROLE: STUDENT // ID: #8821</p>
+                    <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">...</span></h2>
+                    <p id="user-details" class="text-xs text-white/40 font-mono mt-1">ROLE: ... // ID: ...</p>
                 </div>
                 <div class="text-right">
-                     <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
-                     <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
+                    <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
+                    <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
                 </div>
             </div>
 
@@ -170,13 +173,12 @@
                             Hover to inspect ticket details.
                         </p>
                     </div>
-                    <button class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
-                        VIEW_FULL_LIST ->
+                    <button onclick="switchView('catalog')" class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
+                        BROWSE_CATALOG ->
                     </button>
                 </div>
 
                 <div id="cards-container" class="mt-8"></div>
-                
                 <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
             </div>
 
@@ -202,7 +204,26 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div id="view-catalog" class="hidden flex-col gap-6 h-full absolute top-0 left-0 w-full bg-transparent transition-all duration-500">
+            
+            <div class="glass-panel rounded-2xl p-6 flex flex-col justify-center h-32 shrink-0">
+                <label class="text-xs text-cyan-400 font-mono mb-2 tracking-widest">DATABASE_QUERY</label>
+                <div class="relative w-full">
+                    <input type="text" id="search-input" 
+                        class="w-full bg-transparent border-b border-white/20 py-2 text-2xl font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20"
+                        placeholder="ENTER BOOK TITLE OR AUTHOR..." autocomplete="off">
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 animate-pulse">_</div>
+                </div>
+            </div>
 
+            <div class="glass-panel rounded-2xl p-6 flex-1 overflow-y-auto relative">
+                <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-10">
+                    </div>
+                
+                <div class="sticky bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+            </div>
+        </div>
         </main>
     </div>
 
@@ -214,184 +235,171 @@
     </script>
 
 <script>
-    // 1. Данные
-    const activeLoans = [
-        { title: "Dune", author: "Frank Herbert", genre: "Sci-Fi", date: "2023-12-15", status: "OVERDUE" },
-        { title: "Neuromancer", author: "William Gibson", genre: "Cyberpunk", date: "2023-12-20", status: "ACTIVE" },
-        { title: "Design Systems", author: "Alla Kholmatova", genre: "Design", date: "2023-12-25", status: "ACTIVE" },
-        { title: "1984", author: "George Orwell", genre: "Classic", date: "2023-12-28", status: "ACTIVE" },
-        { title: "Clean Code", author: "Robert Martin", genre: "Tech", date: "2024-01-05", status: "ACTIVE" }
-    ];
+const container = document.getElementById('cards-container');
+const transformStyles = [
+  'rotate(10deg) translate(-170px)',
+  'rotate(5deg) translate(-85px)',
+  'rotate(0deg) translate(0px)',
+  'rotate(-5deg) translate(85px)',
+  'rotate(-10deg) translate(170px)'
+];
 
-    const container = document.getElementById('cards-container');
+const getGenreColor = (genre) => {
+  const map = {
+    'Sci-Fi': '#22d3ee',
+    'Cyberpunk': '#f472b6',
+    'Design': '#facc15',
+    'Classic': '#94a3b8',
+    'Tech': '#4ade80'
+  };
+  return map[genre] || '#ffffff';
+};
 
-    // 2. Настройки трансформации (Копия из твоего React кода)
-    const transformStyles = [
-        'rotate(10deg) translate(-170px)',
-        'rotate(5deg) translate(-85px)',
-        'rotate(0deg) translate(0px)', // Центральная карта
-        'rotate(-5deg) translate(85px)',
-        'rotate(-10deg) translate(170px)'
-    ];
+const getNoRotationTransform = (transformStr) => {
+  if (!transformStr) return 'rotate(0deg)';
+  return transformStr.includes('rotate')
+    ? transformStr.replace(/rotate\([\s\S]*?\)/, 'rotate(0deg)')
+    : transformStr === 'none'
+      ? 'rotate(0deg)'
+      : `${transformStr} rotate(0deg)`;
+};
 
-    // Хелпер для цветов
-    const getGenreColor = (genre) => {
-        const map = { 'Sci-Fi': '#22d3ee', 'Cyberpunk': '#f472b6', 'Design': '#facc15', 'Classic': '#94a3b8', 'Tech': '#4ade80' };
-        return map[genre] || '#ffffff';
-    };
+const getPushedTransform = (baseTransform, offsetX) => {
+  if (!baseTransform) baseTransform = 'none';
+  const translateRegex = /translate\(([-0-9.]+)px\)/;
+  const match = baseTransform.match(translateRegex);
+  if (match) {
+    const currentX = parseFloat(match[1]);
+    const newX = currentX + offsetX;
+    return baseTransform.replace(translateRegex, `translate(${newX}px)`);
+  }
+  return baseTransform === 'none'
+    ? `translate(${offsetX}px)`
+    : `${baseTransform} translate(${offsetX}px)`;
+};
 
-    // --- ЛОГИКА ИЗ REACT КОМПОНЕНТА ---
-
-    // Убирает rotation из строки transform
-    const getNoRotationTransform = (transformStr) => {
-        const hasRotate = /rotate\([\s\S]*?\)/.test(transformStr);
-        if (hasRotate) {
-            return transformStr.replace(/rotate\([\s\S]*?\)/, 'rotate(0deg)');
-        } else if (transformStr === 'none') {
-            return 'rotate(0deg)';
-        } else {
-            return `${transformStr} rotate(0deg)`;
-        }
-    };
-
-    // Вычисляет новый translate, добавляя offsetX
-    const getPushedTransform = (baseTransform, offsetX) => {
-        const translateRegex = /translate\(([-0-9.]+)px\)/;
-        const match = baseTransform.match(translateRegex);
-        
-        if (match) {
-            const currentX = parseFloat(match[1]);
-            const newX = currentX + offsetX;
-            return baseTransform.replace(translateRegex, `translate(${newX}px)`);
-        } else {
-            // Если translate не было, добавляем его (хотя в нашем массиве он везде есть, кроме центра может быть)
-            return baseTransform === 'none' 
-                ? `translate(${offsetX}px)` 
-                : `${baseTransform} translate(${offsetX}px)`;
-        }
-    };
-
-    // Главная функция анимации при наведении
-    const pushSiblings = (hoveredIdx) => {
-        activeLoans.forEach((_, i) => {
-            if (i >= 5) return;
-            const el = document.querySelector(`.card-${i}`);
-            // Останавливаем предыдущие анимации для этого элемента
-            gsap.killTweensOf(el);
-
-            const baseTransform = transformStyles[i] || 'none';
-
-            // Если это карта, на которую навели
-            if (i === hoveredIdx) {
-                el.classList.add('is-hovered'); // Поднимаем z-index
-                const noRotation = getNoRotationTransform(baseTransform);
-                
-                gsap.to(el, {
-                    transform: noRotation,
-                    scale: 1.1, // Чуть увеличиваем
-                    duration: 0.4,
-                    ease: 'back.out(1.4)',
-                    overwrite: 'auto'
-                });
-            } 
-            // Соседние карты
-            else {
-                el.classList.remove('is-hovered');
-                // Логика сдвига: если левее -160px, если правее +160px
-                const offsetX = i < hoveredIdx ? -160 : 160;
-                const pushedTransform = getPushedTransform(baseTransform, offsetX);
-                
-                // Расчет задержки (stagger эффект)
-                const distance = Math.abs(hoveredIdx - i);
-                const delay = distance * 0.05;
-
-                gsap.to(el, {
-                    transform: pushedTransform,
-                    scale: 0.9, // Чуть уменьшаем соседей для акцента
-                    duration: 0.4,
-                    ease: 'back.out(1.4)',
-                    delay: delay,
-                    overwrite: 'auto'
-                });
-            }
-        });
-    };
-
-    // Сброс при уходе мыши
-    const resetSiblings = () => {
-        activeLoans.forEach((_, i) => {
-            if (i >= 5) return;
-            const el = document.querySelector(`.card-${i}`);
-            el.classList.remove('is-hovered');
-            
-            gsap.killTweensOf(el);
-            
-            const baseTransform = transformStyles[i] || 'none';
-            
-            gsap.to(el, {
-                transform: baseTransform,
-                scale: 1,
-                duration: 0.4,
-                ease: 'back.out(1.4)',
-                overwrite: 'auto'
-            });
-        });
-    };
-
-    // Инициализация
-    function initCards() {
-        container.innerHTML = '';
-        
-        activeLoans.forEach((book, i) => {
-            if(i >= 5) return;
-
-            const el = document.createElement('div');
-            el.className = `ticket-card card-${i}`;
-            // Устанавливаем начальное состояние сразу
-            el.style.transform = transformStyles[i];
-            // Ставим z-index лесенкой, чтобы при сбросе они правильно перекрывались
-            // В центре (i=2) самый высокий, по краям ниже
-            // Или просто линейно, как в react коде (там z-index не трогают, полагаясь на DOM order)
-            // Но для красоты лучше так:
-            el.style.zIndex = i + 1; 
-
-            const color = getGenreColor(book.genre);
-            const statusColor = book.status === 'OVERDUE' ? 'text-red-500 animate-pulse' : 'text-green-400';
-
-            el.innerHTML = `
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: ${color}; box-shadow: 0 0 10px ${color};"></div>
-                
-                <div class="mt-2 flex justify-between items-start">
-                     <span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${book.genre.toUpperCase()}</span>
-                     <div class="w-1.5 h-1.5 rounded-full ${book.status === 'OVERDUE' ? 'bg-red-500 box-shadow-red' : 'bg-green-500 box-shadow-green'}"></div>
-                </div>
-
-                <div class="flex flex-col justify-center flex-grow">
-                    <h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4>
-                    <p class="text-[11px] text-white/40 font-mono">${book.author}</p>
-                </div>
-
-                <div class="border-t border-white/10 pt-3 flex justify-between items-end">
-                    <div>
-                        <span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span>
-                        <span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span>
-                    </div>
-                    <span class="text-[9px] text-white/10 font-mono">#0${i+1}</span>
-                </div>
-            `;
-
-            // События
-            el.addEventListener('mouseenter', () => pushSiblings(i));
-            // Добавляем событие на контейнер для сброса, чтобы "дыры" между картами не дергали анимацию
-            
-            container.appendChild(el);
-        });
-
-        // Сброс вешаем на контейнер, когда мышь уходит совсем
-        container.addEventListener('mouseleave', resetSiblings);
+const pushSiblings = (hoveredIdx, loans) => {
+  loans.forEach((_, i) => {
+    if (i >= 5) return;
+    const el = document.querySelector(`.card-${i}`);
+    if (!el) return;
+    gsap.killTweensOf(el);
+    const baseTransform = transformStyles[i] || 'none';
+    if (i === hoveredIdx) {
+      el.classList.add('is-hovered');
+      gsap.to(el, {
+        transform: getNoRotationTransform(baseTransform),
+        scale: 1.1,
+        duration: 0.4,
+        ease: 'back.out(1.4)',
+        overwrite: 'auto'
+      });
+    } else {
+      el.classList.remove('is-hovered');
+      const offsetX = i < hoveredIdx ? -160 : 160;
+      const delay = Math.abs(hoveredIdx - i) * 0.05;
+      gsap.to(el, {
+        transform: getPushedTransform(baseTransform, offsetX),
+        scale: 0.9,
+        duration: 0.4,
+        ease: 'back.out(1.4)',
+        delay: delay,
+        overwrite: 'auto'
+      });
     }
+  });
+};
 
-    initCards();
+const resetSiblings = (loans) => {
+  loans.forEach((_, i) => {
+    if (i >= 5) return;
+    const el = document.querySelector(`.card-${i}`);
+    if (!el) return;
+    el.classList.remove('is-hovered');
+    gsap.killTweensOf(el);
+    gsap.to(el, {
+      transform: transformStyles[i] || 'none',
+      scale: 1,
+      duration: 0.4,
+      ease: 'back.out(1.4)',
+      overwrite: 'auto'
+    });
+  });
+};
+
+function initCards(loans) {
+  if (!container) return;
+  container.innerHTML = '';
+  loans.forEach((book, i) => {
+    if (i >= 5) return;
+    const el = document.createElement('div');
+    el.className = `ticket-card card-${i}`;
+    el.style.transform = transformStyles[i];
+    el.style.zIndex = loans.length - i;
+
+    const color = getGenreColor(book.genre);
+    const statusColor = book.status === 'OVERDUE' ? 'text-red-500 animate-pulse' : 'text-green-400';
+
+    el.innerHTML = `
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: ${color}; box-shadow: 0 0 10px ${color};"></div>
+      <div class="mt-2 flex justify-between items-start">
+        <span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${(book.genre || 'NONE').toUpperCase()}</span>
+        <div class="w-1.5 h-1.5 rounded-full ${book.status === 'OVERDUE' ? 'bg-red-500' : 'bg-green-500'}"></div>
+      </div>
+      <div class="flex flex-col justify-center flex-grow">
+        <h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4>
+        <p class="text-[11px] text-white/40 font-mono">${book.author}</p>
+      </div>
+      <div class="border-t border-white/10 pt-3 flex justify-between items-end">
+        <div>
+          <span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span>
+          <span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span>
+        </div>
+        <span class="text-[9px] text-white/10 font-mono">#0${i + 1}</span>
+      </div>
+    `;
+
+    el.addEventListener('mouseenter', () => pushSiblings(i, loans));
+    container.appendChild(el);
+  });
+
+  container.addEventListener('mouseleave', () => resetSiblings(loans));
+}
+
+async function fetchAndRender() {
+  const userId = 1;
+  const userEndpoint = `/api/users/${userId}`;
+  const reservationsEndpoint = `/api/users/${userId}/reservations/`;
+
+  try {
+    const [userResponse, reservationsResponse] = await Promise.all([
+      fetch(userEndpoint),
+      fetch(reservationsEndpoint)
+    ]);
+
+    const user = await userResponse.json();
+    document.getElementById('user-name').textContent = user.name.toUpperCase();
+    document.getElementById('user-details').textContent = `ROLE: ${user.role.name.toUpperCase()} // ID: #${user.id}`;
+
+    const reservations = await reservationsResponse.json();
+    const formattedLoans = reservations.map(res => ({
+      title: res.book.title,
+      author: res.book.author_name,
+      genre: res.book.genre_name,
+      date: res.reserve_date,
+      status: res.status.toUpperCase()
+    }));
+
+    initCards(formattedLoans);
+  } catch (error) {
+    console.error('Ошибка при загрузке данных:', error);
+    if (container) {
+      container.innerHTML = '<p style="color: red; text-align: center;">Failed to load data.</p>';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', fetchAndRender);
 </script>
 
     <script type="module">
@@ -610,5 +618,133 @@
         }
         animate();
     </script>
+
+    <script>
+    // --- ЛОГИКА НАВИГАЦИИ ---
+    function switchView(viewName) {
+        const dashboard = document.getElementById('view-dashboard');
+        const catalog = document.getElementById('view-catalog');
+        const navDashboard = document.getElementById('nav-dashboard');
+        const navCatalog = document.getElementById('nav-catalog');
+
+        // Стили активной кнопки меню
+        const activeClass = "text-cyan-400 bg-white/5 border-l-2 border-cyan-400 font-bold";
+        const inactiveClass = "text-white/60 hover:text-cyan-400 hover:bg-white/5";
+
+        if (viewName === 'catalog') {
+            // Анимация скрытия дашборда
+            gsap.to(dashboard, { 
+                autoAlpha: 0, 
+                y: -20, 
+                duration: 0.3, 
+                onComplete: () => {
+                    dashboard.classList.add('hidden');
+                    catalog.classList.remove('hidden');
+                    // Анимация появления каталога
+                    gsap.fromTo(catalog, 
+                        { autoAlpha: 0, y: 20 }, 
+                        { autoAlpha: 1, y: 0, duration: 0.4 }
+                    );
+                    renderCatalog(); // Рендерим книги при открытии
+                }
+            });
+
+            // Обновляем меню
+            navCatalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
+            navDashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
+            
+            // Фокус на поиск
+            setTimeout(() => document.getElementById('search-input').focus(), 400);
+
+        } else {
+            // Обратная анимация
+            gsap.to(catalog, { 
+                autoAlpha: 0, 
+                y: -20, 
+                duration: 0.3, 
+                onComplete: () => {
+                    catalog.classList.add('hidden');
+                    dashboard.classList.remove('hidden');
+                    gsap.fromTo(dashboard, 
+                        { autoAlpha: 0, y: 20 }, 
+                        { autoAlpha: 1, y: 0, duration: 0.4 }
+                    );
+                }
+            });
+
+            navDashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
+            navCatalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
+        }
+    }
+
+    // --- ТЕСТОВЫЕ ДАННЫЕ КАТАЛОГА ---
+    // Я использую Picsum Photos с черно-белым фильтром для стиля
+    const mockCatalog = [
+        { id: 1, title: "The Pragmatic Programmer", author: "Andy Hunt", genre: "Education", image: "https://picsum.photos/id/1/300/450?grayscale" },
+        { id: 2, title: "Dune", author: "Frank Herbert", genre: "Sci-Fi", image: "https://picsum.photos/id/10/300/450?grayscale" },
+        { id: 3, title: "Neuromancer", author: "William Gibson", genre: "Cyberpunk", image: "https://picsum.photos/id/20/300/450?grayscale" },
+        { id: 4, title: "Clean Code", author: "Robert C. Martin", genre: "Tech", image: "https://picsum.photos/id/3/300/450?grayscale" },
+        { id: 5, title: "Foundation", author: "Isaac Asimov", genre: "Sci-Fi", image: "https://picsum.photos/id/40/300/450?grayscale" },
+        { id: 6, title: "Snow Crash", author: "Neal Stephenson", genre: "Cyberpunk", image: "https://picsum.photos/id/50/300/450?grayscale" },
+        { id: 7, title: "Refactoring", author: "Martin Fowler", genre: "Tech", image: "https://picsum.photos/id/60/300/450?grayscale" },
+        { id: 8, title: "Hyperion", author: "Dan Simmons", genre: "Sci-Fi", image: "https://picsum.photos/id/70/300/450?grayscale" },
+    ];
+
+    function renderCatalog(filterText = "") {
+        const grid = document.getElementById('catalog-grid');
+        grid.innerHTML = '';
+
+        // Фильтрация
+        const filtered = mockCatalog.filter(book => 
+            book.title.toLowerCase().includes(filterText.toLowerCase()) || 
+            book.author.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        if(filtered.length === 0) {
+            grid.innerHTML = `<div class="col-span-full text-center text-white/30 py-10 font-mono">NO DATA FOUND // QUERY_EMPTY</div>`;
+            return;
+        }
+
+        filtered.forEach((book, i) => {
+            const card = document.createElement('div');
+            // Стили карточки книги
+            card.className = "group relative aspect-[2/3] bg-black/40 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-400/50 transition-all cursor-pointer catalog-card";
+            
+            card.innerHTML = `
+                <img src="${book.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
+                
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
+                
+                <div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 translate-y-2 group-hover:translate-y-0 transition-transform">
+                    <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">
+                        ${book.genre.toUpperCase()}
+                    </span>
+                    <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
+                    <p class="text-xs text-white/50 font-mono line-clamp-1">${book.author}</p>
+                    
+                    <button class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">
+                        RESERVE_
+                    </button>
+                </div>
+                
+                <div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+            `;
+            
+            grid.appendChild(card);
+        });
+
+        // Анимация появления карточек
+        gsap.fromTo(".catalog-card", 
+            { y: 20, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power2.out", clearProps: "all" }
+        );
+    }
+
+    // Слушатель поиска
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        renderCatalog(e.target.value);
+    });
+    </script>
+
 </body>
 </html>
