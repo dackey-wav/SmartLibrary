@@ -1,7 +1,7 @@
 from __future__ import annotations
-
+from typing import Annotated
 from datetime import datetime, date
-from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func, MetaData
+from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
 
@@ -14,6 +14,8 @@ convention = {
 }
 
 metadata = MetaData(naming_convention=convention)
+
+intpk = Annotated[int, mapped_column(Integer, primary_key=True)]
 
 class Base(DeclarativeBase):
     """Base for all models"""
@@ -28,10 +30,10 @@ class ReservationStatus(enum.Enum):
 
 
 class Role(Base):
-    """User roles: admin, user, manager, librarian etc."""
+    """User roles: admin, user etc."""
     __tablename__ = "roles"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
 
     users: Mapped[list["User"]] = relationship(back_populates="role")
@@ -41,7 +43,7 @@ class User(Base):
     """System users"""
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     phone: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -56,7 +58,7 @@ class Genre(Base):
     """Book genres"""
     __tablename__ = "genres"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
     books: Mapped[list["Book"]] = relationship(back_populates="genre")
@@ -66,7 +68,7 @@ class Author(Base):
     """Authors"""
     __tablename__ = "authors"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
     nationality: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -78,7 +80,7 @@ class Book(Base):
     """Books"""
     __tablename__ = "books"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     isbn: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
     published_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -99,10 +101,10 @@ class Reservation(Base):
     """Book reservations"""
     __tablename__ = "reservations"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[intpk]
     book_id: Mapped[int] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    reserve_date: Mapped[date] = mapped_column(Date, nullable=False, server_default=func.current_date())
+    reserve_date: Mapped[date] = mapped_column(Date, nullable=False, server_default=text("TIMEZONE('utc', now())"))
     return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[ReservationStatus] = mapped_column(
         SQLEnum(ReservationStatus, native_enum=False),

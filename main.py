@@ -7,7 +7,9 @@ from app.db import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/dataset", StaticFiles(directory=r"data\dataset"), name="dataset")
 
 def get_db():
     db = SessionLocal()
@@ -16,6 +18,7 @@ def get_db():
     finally:
         db.close()
 
+
 @app.get("/api/users/{user_id}", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)
@@ -23,24 +26,38 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@app.get("/api/books/", response_model=list[schemas.Book])
-def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    books = crud.get_books(db, skip=skip, limit=limit)
-    return books
-    
+
+@app.get("/api/books/", response_model=schemas.BookPage)
+def read_books(
+    skip: int = 0,
+    limit: int = 8,
+    db: Session = Depends(get_db), 
+    genre_id: int | None = None,
+    author_id: int | None = None,
+    search: str | None = None,
+    sort: str | None = None
+    ):
+
+    books, total_items = crud.get_books(
+        db, skip=skip, limit=limit, genre_id=genre_id,
+        author_id=author_id, search=search, sort=sort)
+
+    return {"items": books, "total_items": total_items, "skip": skip, "limit": limit}
+
+
 @app.get("/api/users/{user_id}/reservations/", response_model=list[schemas.Reservation])
 def read_user_reservations(user_id: int, db: Session = Depends(get_db)):
     reservations = crud.get_user_reservations(db, user_id=user_id)
-    for res in reservations:
-        if res.book:
-            if res.book.author:
-                res.book.author_name = res.book.author.name
-            else:
-                res.book.author_name = "Unknown"
-
-            if res.book.genre:
-                res.book.genre_name = res.book.genre.name
-            else:
-                res.book.genre_name = "Unknown"
     return reservations
 
+
+@app.get("/api/genres/", response_model=list[schemas.Genre])
+def read_genres(db: Session = Depends(get_db)):
+    genres = crud.get_genres(db)
+    return genres
+
+
+@app.get("/api/authors/", response_model=list[schemas.Author])
+def read_authors(db: Session = Depends(get_db)):
+    authors = crud.get_authors(db)
+    return authors
