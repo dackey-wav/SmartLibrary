@@ -61,12 +61,9 @@ def read_authors(db: Session = Depends(get_db)):
 
 @app.post("/api/login", response_model=schemas.User)
 def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    print(f"Login attempt: {user_credentials.login}")  # Дебаг
     user = crud.authenticate_user(db, user_credentials.login, user_credentials.password)
     if not user:
-        print("Authentication failed")  # Дебаг
         raise HTTPException(status_code=400, detail="Incorrect login or password")
-    print(f"Login successful: {user.name}")  # Дебаг
     return user
 
 @app.post("/api/register", response_model=schemas.User)

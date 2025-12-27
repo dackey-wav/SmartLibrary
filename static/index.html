@@ -268,8 +268,12 @@
 
     <script>
         // --- CONFIG & STATE ---
-        const CURRENT_USER_ID = 1; 
-        
+        const storedId = localStorage.getItem('user_id');
+        const CURRENT_USER_ID = storedId ? Number(storedId) : null;
+        if (!CURRENT_USER_ID || Number.isNaN(CURRENT_USER_ID)) {
+            window.location.href = 'login.html';
+        }
+
         const DOM = {
             views: { dashboard: document.getElementById('view-dashboard'), catalog: document.getElementById('view-catalog') },
             navs: { dashboard: document.getElementById('nav-dashboard'), catalog: document.getElementById('nav-catalog') },
@@ -303,6 +307,9 @@
         // --- 1. USER & DASHBOARD DATA ---
         async function fetchUserData() {
             try {
+                const storedName = localStorage.getItem('user_name');
+                if (storedName) DOM.userName.textContent = storedName.toUpperCase();
+                
                 const userRes = await fetch(`/api/users/${CURRENT_USER_ID}`);
                 if (!userRes.ok) throw new Error('User fetch failed');
                 const user = await userRes.json();
@@ -649,4 +656,4 @@
         const canvas=document.querySelector('#canvas-container');const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});renderer.setPixelRatio(1);renderer.setSize(window.innerWidth,window.innerHeight);const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.position.z=6;const waveUniforms={time:{value:0},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)},waveSpeed:{value:configWave.waveSpeed},waveFrequency:{value:configWave.waveFrequency},waveAmplitude:{value:configWave.waveAmplitude},waveColor:{value:configWave.waveColor},mousePos:{value:new THREE.Vector2(0,0)},enableMouseInteraction:{value:1},mouseRadius:{value:configWave.mouseRadius}};const planeGeo=new THREE.PlaneGeometry(50,50);const waveMat=new THREE.ShaderMaterial({vertexShader:waveVertexShader,fragmentShader:waveFragmentShader,uniforms:waveUniforms});const plane=new THREE.Mesh(planeGeo,waveMat);scene.add(plane);const composer=new EffectComposer(renderer);const renderPass=new RenderPass(scene,camera);composer.addPass(renderPass);const ditherPass=new ShaderPass({uniforms:{tDiffuse:{value:null},colorNum:{value:configWave.colorNum},pixelSize:{value:configWave.pixelSize},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}},vertexShader:waveVertexShader,fragmentShader:ditherFragmentShader});composer.addPass(ditherPass);window.addEventListener('resize',()=>{const width=window.innerWidth;const height=window.innerHeight;renderer.setSize(width,height);composer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();waveUniforms.resolution.value.set(width,height);ditherPass.uniforms.resolution.value.set(width,height);});window.addEventListener('mousemove',(e)=>{waveUniforms.mousePos.value.set(e.clientX,e.clientY);});const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);waveUniforms.time.value=clock.getElapsedTime();composer.render();}animate();
     </script>
 </body>
-</html
+</html>

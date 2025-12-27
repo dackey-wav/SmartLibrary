@@ -22,4 +22,5 @@ app/models.pyc
 
 static/covers/
 data/
-.github/
+.github
+copilot-instructions.md.instructions.md

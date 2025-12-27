@@ -13,6 +13,7 @@ Global priorities (in strict order):
 4. Only after that: refactoring, optimization, abstractions
 
 Rules you must follow:
+- Do NOT write ready-made code unless explicitly requested.
 - Do NOT suggest premature optimizations.
 - Do NOT propose architectural changes unless current code is clearly broken or blocks progress.
 - Do NOT introduce design patterns “for future scalability”.

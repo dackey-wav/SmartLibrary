@@ -64,30 +64,23 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 def authenticate_user(db: Session, login: str, password: str):
-    user = None
-    try:
-        user_id = int(login)  # Спробуємо перетворити на число (ID)
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-    except ValueError:
-        # Якщо не число, шукаємо по email
-        user = get_user_by_email(db, login)
+    user = get_user_by_email(db, login)
 
     if not user:
-        print(f"User not found: {login}")  # Дебаг
+        print(f"User not found: {login}")
         return False
     if not pwd_context.verify(password, user.password_hash):
-        print(f"Password mismatch for: {login}")  # Дебаг
+        print(f"Password mismatch for: {login}")
         return False
     return user
 
 def create_user(db: Session, user_data):
-    print(f"Creating user: {user_data.name}, {user_data.email}")  # Дебаг
-    role = db.query(models.Role).filter(models.Role.name == user_data.role_name).first()
+    print(f"Creating user: {user_data.name}, {user_data.email}")
+    role = db.query(models.Role).filter(models.Role.name == 'user').first()
     if not role:
-        role = models.Role(name=user_data.role_name)
+        role = models.Role(name='user')
         db.add(role)
         db.flush()
-        print(f"Created role: {user_data.role_name}")  # Дебаг
     hashed_password = pwd_context.hash(user_data.password)
     db_user = models.User(
         name=user_data.name,

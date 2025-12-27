@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
 
 class Role(BaseModel):
@@ -6,7 +6,6 @@ class Role(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class User(BaseModel):
     id: int
@@ -25,14 +24,12 @@ class Genre(BaseModel):
     class Config:
         from_attributes = True
 
-
 class Author(BaseModel):
    id: int
    name: str
 
    class Config:
     from_attributes = True
-
 
 class Book(BaseModel):
     id: int
@@ -46,7 +43,6 @@ class Book(BaseModel):
     class Config:
         from_attributes = True
 
-
 class BookPage(BaseModel):
     items: list[Book]
     total_items: int
@@ -55,7 +51,6 @@ class BookPage(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class Reservation(BaseModel):
     id: int
@@ -66,12 +61,12 @@ class Reservation(BaseModel):
 
     class Config:
         from_attributes = True
+
 class UserLogin(BaseModel):
-    login: str  # Тепер "login" замість "email" — може бути ID (число) або email
+    login: str
     password: str
 
 class UserRegister(BaseModel):
     name: str
     email: str
-    password: str
-    role_name: str = "user"  # За замовчуванням "user", можна змінити на "student" або "teacher"
+    password: str = Field(..., min_length=8, max_length=64)
