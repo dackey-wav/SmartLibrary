@@ -1,26 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
-
-
-class Book(BaseModel):
-    id: int
-    title: str
-    isbn: str
-    count: int
-    cover_path: str | None = None
-    author_name: str | None = None
-    genre_name: str | None = None
-
-    class Config:
-        from_attributes = True
-
 
 class Role(BaseModel):
     name: str
 
     class Config:
         from_attributes = True
-
 
 class User(BaseModel):
     id: int
@@ -32,6 +17,41 @@ class User(BaseModel):
         from_attributes = True
 
 
+class Genre(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+class Author(BaseModel):
+   id: int
+   name: str
+
+   class Config:
+    from_attributes = True
+
+class Book(BaseModel):
+    id: int
+    title: str
+    isbn: str
+    count: int
+    cover_path: str | None = None
+    author: Author | None = None
+    genre: Genre | None = None
+
+    class Config:
+        from_attributes = True
+
+class BookPage(BaseModel):
+    items: list[Book]
+    total_items: int
+    skip: int
+    limit: int
+
+    class Config:
+        from_attributes = True
+
 class Reservation(BaseModel):
     id: int
     reserve_date: date
@@ -41,3 +61,12 @@ class Reservation(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserLogin(BaseModel):
+    login: str
+    password: str
+
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str = Field(..., min_length=8, max_length=64)
