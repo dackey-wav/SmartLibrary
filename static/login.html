@@ -281,7 +281,7 @@
                     const user = await response.json();
                     localStorage.setItem('user_id', user.id);
                     localStorage.setItem('user_name', user.name);
-                    window.location.href = 'lib_ver1.html';
+                    window.location.href = 'index.html';
                 } else {
                     const error = await response.json();
                     alert(error.detail || 'Login failed');
