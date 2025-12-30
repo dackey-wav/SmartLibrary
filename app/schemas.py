@@ -62,11 +62,20 @@ class Reservation(BaseModel):
     class Config:
         from_attributes = True
 
-class UserLogin(BaseModel):
-    login: str
-    password: str
-
 class UserRegister(BaseModel):
     name: str
     email: str
     password: str = Field(..., min_length=8, max_length=64)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+    class Config:
+        from_attributes = True
+
+class TokenData(BaseModel):
+    user_id: int
+
+    class Config:
+        from_attributes = True

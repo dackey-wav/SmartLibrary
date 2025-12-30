@@ -1,9 +1,19 @@
+from datetime import timedelta, timezone, datetime
+from dotenv import load_dotenv
+
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from . import models
-from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import jwt
+from pwdlib import PasswordHash
+import os
+
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY", "secret")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+
+password_hash = PasswordHash.recommended()
 
 def get_books(
         db: Session,
@@ -69,7 +79,7 @@ def authenticate_user(db: Session, login: str, password: str):
     if not user:
         print(f"User not found: {login}")
         return False
-    if not pwd_context.verify(password, user.password_hash):
+    if not password_hash.verify(password, user.password_hash):
         print(f"Password mismatch for: {login}")
         return False
     return user
@@ -81,7 +91,7 @@ def create_user(db: Session, user_data):
         role = models.Role(name='user')
         db.add(role)
         db.flush()
-    hashed_password = pwd_context.hash(user_data.password)
+    hashed_password = password_hash.hash(user_data.password)
     db_user = models.User(
         name=user_data.name,
         email=user_data.email,
@@ -92,3 +102,17 @@ def create_user(db: Session, user_data):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt

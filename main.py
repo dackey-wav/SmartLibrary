@@ -1,12 +1,30 @@
-from fastapi import FastAPI, Depends, HTTPException
+from typing import Annotated
+from datetime import timedelta
+
+import jwt
+from jwt.exceptions import InvalidTokenError
+
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
 from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.db import SessionLocal, engine
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+SECRET_KEY = os.getenv("SECRET_KEY", "secret")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/dataset", StaticFiles(directory=r"data\dataset"), name="dataset")
@@ -19,8 +37,42 @@ def get_db():
         db.close()
 
 
+async def get_current_user(
+        token: Annotated[str, Depends(oauth2_scheme)],
+        db: Session = Depends(get_db)
+        ):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        user_id_from_token = payload.get("sub")
+        if user_id_from_token is None:
+            raise credentials_exception
+        
+        user_id_from_token = int(user_id_from_token)
+        token_data = schemas.TokenData(user_id=user_id_from_token)
+    except InvalidTokenError as e:
+        raise credentials_exception
+    
+    user = crud.get_user(db, user_id=token_data.user_id)
+    if user is None:
+        raise credentials_exception
+    return user
+
+
 @app.get("/api/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(
+    user_id: int,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -45,7 +97,13 @@ def read_books(
     return {"items": books, "total_items": total_items, "skip": skip, "limit": limit}
 
 @app.get("/api/users/{user_id}/reservations/", response_model=list[schemas.Reservation])
-def read_user_reservations(user_id: int, db: Session = Depends(get_db)):
+def read_user_reservations(
+    user_id: int,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
     reservations = crud.get_user_reservations(db, user_id=user_id)
     return reservations
 
@@ -59,12 +117,23 @@ def read_authors(db: Session = Depends(get_db)):
     authors = crud.get_authors(db)
     return authors
 
-@app.post("/api/login", response_model=schemas.User)
-def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = crud.authenticate_user(db, user_credentials.login, user_credentials.password)
+@app.post("/token", response_model=schemas.Token)
+def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db)
+    ) -> schemas.Token:
+    user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect login or password")
-    return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = crud.create_access_token(
+        data={"sub": user.id}, expires_delta=access_token_expires
+    )
+    return schemas.Token(access_token=access_token, token_type="bearer")
 
 @app.post("/api/register", response_model=schemas.User)
 def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
