@@ -7,6 +7,7 @@ from jwt.exceptions import InvalidTokenError
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse
 
 from sqlalchemy.orm import Session
 from app import crud, models, schemas
@@ -26,7 +27,7 @@ app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static/login.html", StaticFiles(directory="static"), name="static")
 app.mount("/dataset", StaticFiles(directory=r"data\dataset"), name="dataset")
 
 def get_db():
@@ -142,3 +143,7 @@ def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     user = crud.create_user(db, user_data)
     return user
+
+@app.get("/")
+def index(current_user: Annotated[schemas.User, Depends(get_current_user)]):
+    return FileResponse(path="static/index.html")
