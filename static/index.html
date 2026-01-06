@@ -267,13 +267,14 @@
     </div>
 
     <script>
-        // --- CONFIG & STATE ---
-        const storedId = localStorage.getItem('user_id');
-        const CURRENT_USER_ID = storedId ? Number(storedId) : null;
-        if (!CURRENT_USER_ID || Number.isNaN(CURRENT_USER_ID)) {
-            window.location.href = 'login.html';
+        // Проверяем токен при загрузке
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
         }
 
+        let CURRENT_USER_ID = null; // Будет установлено после fetchUserData
+        
         const DOM = {
             views: { dashboard: document.getElementById('view-dashboard'), catalog: document.getElementById('view-catalog') },
             navs: { dashboard: document.getElementById('nav-dashboard'), catalog: document.getElementById('nav-catalog') },
@@ -304,22 +305,54 @@
 
         let isCatalogInitialized = false;
 
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return null;
+            }
+            
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            // Проверка на 401 Unauthorized
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return null;
+            }
+
+            return response;
+        }
+
         // --- 1. USER & DASHBOARD DATA ---
         async function fetchUserData() {
             try {
-                const storedName = localStorage.getItem('user_name');
-                if (storedName) DOM.userName.textContent = storedName.toUpperCase();
-                
-                const userRes = await fetch(`/api/users/${CURRENT_USER_ID}`);
-                if (!userRes.ok) throw new Error('User fetch failed');
+                // Сначала получаем данные текущего пользователя
+                const userRes = await apiFetch('/api/me');
+                if (!userRes || !userRes.ok) {
+                    throw new Error('User fetch failed');
+                }
                 const user = await userRes.json();
+                
+                // Теперь знаем user_id
+                CURRENT_USER_ID = user.id;
                 
                 DOM.userName.textContent = user.name.toUpperCase();
                 const roleName = user.role ? user.role.name : "UNKNOWN";
                 DOM.userDetails.textContent = `ROLE: ${roleName.toUpperCase()} // ID: #${user.id}`;
 
-                const resRes = await fetch(`/api/users/${CURRENT_USER_ID}/reservations/`);
-                if (!resRes.ok) throw new Error('Reservations fetch failed');
+                // Получаем резервации
+                const resRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/reservations/`);
+                if (!resRes || !resRes.ok) {
+                    throw new Error('Reservations fetch failed');
+                }
                 const reservations = await resRes.json();
                 
                 DOM.activeCount.textContent = reservations.length.toString().padStart(2, '0');
@@ -329,7 +362,7 @@
                     author: r.book.author.name,
                     genre: r.book.genre.name,
                     date: r.return_date || "NO DATE",
-                    status: "ACTIVE"
+                    status: r.status
                 })));
 
             } catch (e) {
