@@ -208,30 +208,30 @@ def get_user_stats(db: Session, user_id: int, period: int = 30):
     cutoff_date = date.today() - timedelta(days=period)
 
     stmt_genre_count = (
-        select(
-            models.SearchEvents.genre_id
+        select(models.Genre.name, models.SearchEvents.genre_id == models.Genre.id)
+        .join(models.SearchEvents)
+        .where(
+            models.SearchEvents.user_id == user_id,
+            models.SearchEvents.created_at >= cutoff_date,
+            models.SearchEvents.genre_id.isnot(None)
         )
-    ).options(
-        joinedload(models.SearchEvents.genre).joinedload(models.Genre.books)
-    ).where(
-        models.SearchEvents.user_id == user_id,
-        models.SearchEvents.created_at >= cutoff_date
-    ).group_by(
-        models.SearchEvents.genre_id
-    ).order_by(desc(func.count(models.SearchEvents.genre_id))).limit(1)
+        .group_by(models.Genre.name)
+        .order_by(func.count().desc())
+        .limit(1)
+    )
 
     stmt_author_count = (
-        select(
-            models.SearchEvents.author_id
+        select(models.Author.name, models.SearchEvents.author_id == models.Author.id)
+        .join(models.SearchEvents)
+        .where(
+            models.SearchEvents.user_id == user_id,
+            models.SearchEvents.created_at >= cutoff_date,
+            models.SearchEvents.author_id.isnot(None)
         )
-    ).options(
-        joinedload(models.SearchEvents.author).joinedload(models.Author.books)
-    ).where(
-        models.SearchEvents.user_id == user_id,
-        models.SearchEvents.created_at >= cutoff_date
-    ).group_by(
-        models.SearchEvents.author_id
-    ).order_by(desc(func.count(models.SearchEvents.author_id))).limit(1)
+        .group_by(models.Author.name)
+        .order_by(func.count().desc())
+        .limit(1)
+    )
     
     top_genre = db.execute(stmt_genre_count).scalar()
     top_author = db.execute(stmt_author_count).scalar()
@@ -251,17 +251,17 @@ def get_user_stats(db: Session, user_id: int, period: int = 30):
     ).count()
 
     stmt_fav_genre = (
-        select(
-            models.SearchEvents.genre_id
+        select(func.coalesce(models.Genre.name, "N/A"))
+        .join(models.Reservation.book)
+        .outerjoin(models.Book.genre)
+        .where(
+            models.Reservation.user_id == user_id,
+            models.Reservation.status == models.ReservationStatus.returned
         )
-    ).options(
-        joinedload(models.SearchEvents.genre).joinedload(models.Genre.name)
-    ).where(
-        models.Reservation.user_id == user_id,
-        models.Reservation.status == 'returned'
-    ).group_by(
-        models.Reservation.genre_id
-    ).order_by(desc(func.count(models.Reservation.genre_id))).limit(1)
+        .group_by(models.Genre.name)
+        .order_by(func.count().desc())
+        .limit(1)
+    )
 
     fav_genre = db.execute(stmt_fav_genre).scalar()
 
