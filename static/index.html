@@ -11,15 +11,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <style>
         body {
@@ -31,7 +23,19 @@
         }
         
         #canvas-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: auto;
+            background: #000;
+        }
+
+        .container, header, nav {
+            position: relative;
+            z-index: 10;
         }
 
         .glass-panel {
@@ -59,7 +63,8 @@
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px;
             display: flex; flex-direction: column; justify-content: space-between;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); cursor: pointer; overflow: hidden;
-            transform-origin: center center; will-change: transform;
+            transform-origin: center center; will-change: transform; /* Только transform, не всё сразу */
+            transform: translateZ(0); /* GPU acceleration */
         }
 
         .ticket-card.is-hovered { z-index: 50 !important; }
@@ -96,12 +101,16 @@
             box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
             opacity: 0; visibility: hidden; transform: translateY(-10px);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 50;
+            max-height: 240px;
+            overflow-y: auto;
+            contain: layout style paint;
         }
         .dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
         .dropdown-item {
             display: block; width: 100%; padding: 10px 16px; text-align: left;
             color: rgba(255, 255, 255, 0.6); font-size: 0.75rem; font-family: 'Space Mono', monospace;
             cursor: pointer; transition: background 0.2s;
+            will-change: background, color;
         }
         .dropdown-item:hover { background: rgba(255, 255, 255, 0.05); color: white; }
         .dropdown-item.selected { color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
@@ -109,7 +118,7 @@
 </head>
 <body class="h-screen w-screen flex items-center justify-center p-4 md:p-8">
 
-    <canvas id="canvas-container"></canvas>
+    <div id="canvas-container"></div>
 
     <div class="w-full max-w-7xl h-full grid grid-cols-12 gap-6 relative z-10">
         
@@ -129,10 +138,10 @@
                         <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
                     </a>
                     <a href="#" onclick="switchView('dashboard'); return false;" id="nav-dashboard" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
-                        <span class="text-xs opacity-60 font-mono">02</span>
-                        <span class="text-sm tracking-wide font-bold">MY_LOANS</span>
+                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">02</span>
+                        <span class="text-sm tracking-wide">MY_LOANS</span>
                     </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                    <a href="#" onclick="switchView('history'); return false;" id="nav-history" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
                         <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
                         <span class="text-sm tracking-wide">HISTORY_LOG</span>
                     </a>
@@ -142,7 +151,7 @@
                     </a>
                 </nav>
             </div>
-            <div class="text-xs text-white/20 font-mono">v2.1.0 // LIVE</div>
+            <div class="text-xs text-white/20 font-mono">v0.1 // DEMO</div>
         </aside>
 
 
@@ -262,6 +271,61 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="view-history" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none transition-none">
+                    
+                    <div class="h-32 shrink-0 grid grid-cols-12 gap-6">
+                        <div class="col-span-4 glass-panel rounded-2xl p-6 flex flex-col justify-center">
+                            <h2 class="text-xl font-bold text-white tracking-tight mb-1">HISTORY_LOG_</h2>
+                            <p class="text-xs text-white/40 font-mono">TRACKING USER ACTIVITY</p>
+                        </div>
+
+                        <div class="col-span-8 grid grid-cols-3 gap-6">
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                                <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_SEARCH_GENRE</span>
+                                <div class="text-2xl font-bold text-cyan-400">CYBERPUNK</div>
+                                <div class="w-full bg-white/10 h-1 mt-2 rounded-full overflow-hidden">
+                                    <div class="bg-cyan-400 h-full w-[85%]"></div>
+                                </div>
+                                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                                </div>
+                            </div>
+
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                                <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_AUTHOR</span>
+                                <div class="text-xl font-bold text-purple-400 truncate">P.K. DICK</div>
+                                <div class="text-[10px] text-white/30 mt-1">42 SEARCH QUERIES</div>
+                                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                </div>
+                            </div>
+
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between border-r-2 border-r-white/10">
+                                <span class="text-[10px] text-white/40 font-mono tracking-widest">TOTAL_QUERIES</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-3xl font-bold text-white">1,024</span>
+                                    <span class="text-[10px] text-green-400">^12%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl flex-1 flex flex-col overflow-hidden relative">
+                        <div class="px-8 py-5 border-b border-white/10 grid grid-cols-12 text-[10px] text-white/30 font-mono tracking-widest uppercase">
+                            <div class="col-span-4">Book Details</div>
+                            <div class="col-span-2">Taken Date</div>
+                            <div class="col-span-2">Return Due</div>
+                            <div class="col-span-2">Status</div>
+                            <div class="col-span-2 text-right">Action</div>
+                        </div>
+
+                        <div class="overflow-y-auto custom-scrollbar flex-1 p-4 space-y-2" id="history-list-container">
+                            </div>
+                        
+                        <div class="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#0a0a0f] to-transparent pointer-events-none"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -318,14 +382,23 @@
         let CURRENT_USER_ID = null; // Будет установлено после fetchUserData
         
         const DOM = {
-            views: { dashboard: document.getElementById('view-dashboard'), catalog: document.getElementById('view-catalog') },
-            navs: { dashboard: document.getElementById('nav-dashboard'), catalog: document.getElementById('nav-catalog') },
+            views: {
+                dashboard: document.getElementById('view-dashboard'),
+                catalog: document.getElementById('view-catalog'),
+                history: document.getElementById('view-history')
+            },
+            navs: {
+                dashboard: document.getElementById('nav-dashboard'),
+                catalog: document.getElementById('nav-catalog'),
+                history: document.getElementById('nav-history')
+            },
             grid: document.getElementById('catalog-grid'),
             loadMoreBtn: document.getElementById('load-more-container'),
             scrollContainer: document.getElementById('catalog-scroll-container'),
             activeCount: document.getElementById('active-count'),
             userName: document.getElementById('user-name'),
-            userDetails: document.getElementById('user-details')
+            userDetails: document.getElementById('user-details'),
+            historyList: document.getElementById('history-list-container')
         };
 
         const activeClass = "text-cyan-400 bg-white/5 border-l-2 border-cyan-400 font-bold";
@@ -644,37 +717,33 @@
         });
 
         // --- 4. NAVIGATION & INIT ---
-        function switchView(target) {
-            const isCatalogTarget = target === 'catalog';
-            if (isCatalogTarget && DOM.views.catalog.style.opacity === '1') return;
-            if (!isCatalogTarget && DOM.views.dashboard.style.opacity === '1') return;
+        function switchView(viewName) {
+            const activeView = DOM.views[viewName];
+            const otherViews = Object.values(DOM.views).filter(v => v !== activeView);
 
-            if (isCatalogTarget && !isCatalogInitialized) {
-                fetchBooks(true); 
+            gsap.to(otherViews, { opacity: 0, pointerEvents: 'none', duration: 0.3 });
+            gsap.to(activeView, { opacity: 1, pointerEvents: 'auto', duration: 0.3, delay: 0.1 });
+
+            // Навигация
+            Object.values(DOM.navs).forEach(el => {
+                el.classList.remove('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
+                el.classList.add('text-white/60');
+            });
+
+            const activeNav = DOM.navs[viewName];
+            if (activeNav) {
+                activeNav.classList.remove('text-white/60');
+                activeNav.classList.add('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
+            }
+
+            // Логика подгрузки данных
+            if (viewName === 'catalog' && !isCatalogInitialized) {
+                fetchBooks(true);
                 initDropdowns();
                 isCatalogInitialized = true;
             }
-
-            const tl = gsap.timeline({ defaults: { duration: 0.4, ease: "power2.inOut" } });
-
-            if (isCatalogTarget) {
-                DOM.views.catalog.classList.remove('pointer-events-none');
-                DOM.views.catalog.classList.add('pointer-events-auto');
-                DOM.views.dashboard.classList.remove('pointer-events-auto');
-                DOM.views.dashboard.classList.add('pointer-events-none');
-
-                tl.to(DOM.views.dashboard, { autoAlpha: 0, scale: 0.98 })
-                .fromTo(DOM.views.catalog, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
-            } else {
-                DOM.views.dashboard.classList.remove('pointer-events-none');
-                DOM.views.dashboard.classList.add('pointer-events-auto');
-                DOM.views.catalog.classList.remove('pointer-events-auto');
-                DOM.views.catalog.classList.add('pointer-events-none');
-
-                tl.to(DOM.views.catalog, { autoAlpha: 0, scale: 0.98 })
-                .fromTo(DOM.views.dashboard, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
-            }
-            updateNav(target);
+            if (viewName === 'history') fetchHistory();
+            if (viewName === 'dashboard') fetchUserData();
         }
 
         function updateNav(active) {
@@ -696,6 +765,7 @@
         function initCards(loans) {
             const container = document.getElementById('cards-container');
             container.innerHTML = '';
+            
             loans.forEach((book, i) => {
                 if (i >= 5) return;
                 const el = document.createElement('div');
@@ -842,18 +912,429 @@
                 alert("NETWORK ERROR");
             }
         }
+
+        async function fetchHistory() {
+            DOM.historyList.innerHTML = '<div class="text-center text-white/20 py-10 font-mono animate-pulse">LOADING_LOGS...</div>';
+            
+            try {
+                const res = await apiFetch(`/api/users/${CURRENT_USER_ID}/history/`);
+                let reservations = [];
+                if(res && res.ok) {
+                    reservations = await res.json();
+                }
+
+                renderHistoryRows(reservations);
+            } catch (e) {
+                console.error("History error", e);
+            }
+        }
+
+        function renderHistoryRows(items) {
+            if(items.length === 0) {
+                DOM.historyList.innerHTML = '<div class="text-center text-white/20 py-10 font-mono">NO RECORDS FOUND</div>';
+                return;
+            }
+
+            let html = '';
+            
+            items.forEach(item => {
+                // Определяем стили статуса
+                let statusStyle = "";
+                let actionBtn = "";
+                
+                if(item.status === 'overdue') {
+                    statusStyle = "text-red-400 bg-red-400/10 border border-red-400/20"; // Overdue
+                    actionBtn = `
+                        <button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold bg-red-500/80 text-white border border-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all uppercase tracking-wider">
+                            Return_
+                        </button>
+                        `;
+                }
+                else if(item.status === 'active')
+                {
+                    statusStyle = "text-green-400 bg-green-400/10 border border-green-400/20";
+                    actionBtn = `
+                        <button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold border border-white/20 hover:bg-cyan-400 hover:text-black hover:border-cyan-400 transition-all uppercase tracking-wider">
+                            Return_
+                        </button>
+                    `;
+                } else {
+                    statusStyle = "text-white/40 bg-white/5 border border-white/10";
+                    actionBtn = `<span class="text-[10px] text-white/20 font-mono">ARCHIVED</span>`;
+                }
+
+                const dateTaken = new Date(item.reserve_date).toLocaleDateString();
+                const dateReturn = new Date(item.return_date).toLocaleDateString();
+
+                html += `
+                <div class="grid grid-cols-12 items-center px-4 py-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
+                    <div class="col-span-4 flex flex-col">
+                        <span class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate pr-4">${item.book.title}</span>
+                        <span class="text-xs text-white/40 font-mono">${item.book.author.name}</span>
+                    </div>
+                    <div class="col-span-2 text-xs text-white/60 font-mono">${dateTaken}</div>
+                    <div class="col-span-2 text-xs text-white/60 font-mono">${dateReturn}</div>
+                    <div class="col-span-2">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${statusStyle}">
+                            ${item.status}
+                        </span>
+                    </div>
+                    <div class="col-span-2 text-right">
+                        ${actionBtn}
+                    </div>
+                </div>
+                `;
+            });
+
+            DOM.historyList.innerHTML = html;
+        }
+
+        // Функция возврата книги
+        async function returnBook(reservationId) {
+            if(!confirm("CONFIRM RETURN? This action translates to blockchain ledger.")) return;
+
+            try {
+                const res = await apiFetch(`/api/reservations/${reservationId}/return`, {
+                    method: 'PATCH'
+                });
+                
+                if(res.ok) {
+                    // Обновляем список без перезагрузки страницы
+                    fetchHistory(); 
+                    fetchUserData(); // Обновить каунтер в сайдбаре
+                } else {
+                    alert("SYSTEM ERROR: Cannot process return.");
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
     </script>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-        const configWave={waveSpeed:0.05,waveFrequency:3,waveAmplitude:0.3,waveColor:new THREE.Color(0.85,0.85,0.9),colorNum:4.0,pixelSize:2.0,mouseRadius:0.35};
-        const waveVertexShader=`precision highp float;varying vec2 vUv;void main(){vUv=uv;vec4 modelPosition=modelMatrix*vec4(position,1.0);vec4 viewPosition=viewMatrix*modelPosition;gl_Position=projectionMatrix*viewPosition;}`;
-        const waveFragmentShader=`precision highp float;uniform vec2 resolution;uniform float time;uniform float waveSpeed;uniform float waveFrequency;uniform float waveAmplitude;uniform vec3 waveColor;uniform vec2 mousePos;uniform int enableMouseInteraction;uniform float mouseRadius;vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}vec2 fade(vec2 t){return t*t*t*(t*(t*6.0-15.0)+10.0);}float cnoise(vec2 P){vec4 Pi=floor(P.xyxy)+vec4(0.0,0.0,1.0,1.0);vec4 Pf=fract(P.xyxy)-vec4(0.0,0.0,1.0,1.0);Pi=mod289(Pi);vec4 ix=Pi.xzxz;vec4 iy=Pi.yyww;vec4 fx=Pf.xzxz;vec4 fy=Pf.yyww;vec4 i=permute(permute(ix)+iy);vec4 gx=fract(i*(1.0/41.0))*2.0-1.0;vec4 gy=abs(gx)-0.5;vec4 tx=floor(gx+0.5);gx=gx-tx;vec2 g00=vec2(gx.x,gy.x);vec2 g10=vec2(gx.y,gy.y);vec2 g01=vec2(gx.z,gy.z);vec2 g11=vec2(gx.w,gy.w);vec4 norm=taylorInvSqrt(vec4(dot(g00,g00),dot(g01,g01),dot(g10,g10),dot(g11,g11)));g00*=norm.x;g01*=norm.y;g10*=norm.z;g11*=norm.w;float n00=dot(g00,vec2(fx.x,fy.x));float n10=dot(g10,vec2(fx.y,fy.y));float n01=dot(g01,vec2(fx.z,fy.z));float n11=dot(g11,vec2(fx.w,fy.w));vec2 fade_xy=fade(Pf.xy);vec2 n_x=mix(vec2(n00,n01),vec2(n10,n11),fade_xy.x);return 2.3*mix(n_x.x,n_x.y,fade_xy.y);}const int OCTAVES=4;float fbm(vec2 p){float value=0.0;float amp=1.0;float freq=waveFrequency;for(int i=0;i<OCTAVES;i++){value+=amp*abs(cnoise(p));p*=freq;amp*=waveAmplitude;}return value;}float pattern(vec2 p){vec2 p2=p-time*waveSpeed;return fbm(p+fbm(p2));}void main(){vec2 uv=gl_FragCoord.xy/resolution.xy;uv-=0.5;uv.x*=resolution.x/resolution.y;float f=pattern(uv);if(enableMouseInteraction==1){vec2 mouseNDC=(mousePos/resolution-0.5)*vec2(1.0,-1.0);mouseNDC.x*=resolution.x/resolution.y;float dist=length(uv-mouseNDC);float effect=1.0-smoothstep(0.0,mouseRadius,dist);f-=0.15*effect;}vec3 col=mix(vec3(0.0),waveColor,f);gl_FragColor=vec4(col,1.0);}`;
-        const ditherFragmentShader=`precision highp float;uniform float colorNum;uniform float pixelSize;uniform vec2 resolution;uniform sampler2D tDiffuse;varying vec2 vUv;const float bayerMatrix8x8[64]=float[64](0.0/64.0,48.0/64.0,12.0/64.0,60.0/64.0,3.0/64.0,51.0/64.0,15.0/64.0,63.0/64.0,32.0/64.0,16.0/64.0,44.0/64.0,28.0/64.0,35.0/64.0,19.0/64.0,47.0/64.0,31.0/64.0,8.0/64.0,56.0/64.0,4.0/64.0,52.0/64.0,11.0/64.0,59.0/64.0,7.0/64.0,55.0/64.0,40.0/64.0,24.0/64.0,36.0/64.0,20.0/64.0,43.0/64.0,27.0/64.0,39.0/64.0,23.0/64.0,2.0/64.0,50.0/64.0,14.0/64.0,62.0/64.0,1.0/64.0,49.0/64.0,13.0/64.0,61.0/64.0,34.0/64.0,18.0/64.0,46.0/64.0,30.0/64.0,33.0/64.0,17.0/64.0,45.0/64.0,29.0/64.0,10.0/64.0,58.0/64.0,6.0/64.0,54.0/64.0,9.0/64.0,57.0/64.0,5.0/64.0,53.0/64.0,42.0/64.0,26.0/64.0,38.0/64.0,22.0/64.0,41.0/64.0,25.0/64.0,37.0/64.0,21.0/64.0);vec3 dither(vec2 uv,vec3 color){vec2 scaledCoord=floor(uv*resolution/pixelSize);int x=int(mod(scaledCoord.x,8.0));int y=int(mod(scaledCoord.y,8.0));float threshold=bayerMatrix8x8[y*8+x]-0.25;float step=1.0/(colorNum-1.0);color+=threshold*step;float bias=0.2;color=clamp(color-bias,0.0,1.0);return floor(color*(colorNum-1.0)+0.5)/(colorNum-1.0);}void main(){vec4 color=texture2D(tDiffuse,vUv);color.rgb=dither(vUv,color.rgb);gl_FragColor=color;}`;
-        const canvas=document.querySelector('#canvas-container');const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});renderer.setPixelRatio(1);renderer.setSize(window.innerWidth,window.innerHeight);const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.position.z=6;const waveUniforms={time:{value:0},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)},waveSpeed:{value:configWave.waveSpeed},waveFrequency:{value:configWave.waveFrequency},waveAmplitude:{value:configWave.waveAmplitude},waveColor:{value:configWave.waveColor},mousePos:{value:new THREE.Vector2(0,0)},enableMouseInteraction:{value:1},mouseRadius:{value:configWave.mouseRadius}};const planeGeo=new THREE.PlaneGeometry(50,50);const waveMat=new THREE.ShaderMaterial({vertexShader:waveVertexShader,fragmentShader:waveFragmentShader,uniforms:waveUniforms});const plane=new THREE.Mesh(planeGeo,waveMat);scene.add(plane);const composer=new EffectComposer(renderer);const renderPass=new RenderPass(scene,camera);composer.addPass(renderPass);const ditherPass=new ShaderPass({uniforms:{tDiffuse:{value:null},colorNum:{value:configWave.colorNum},pixelSize:{value:configWave.pixelSize},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}},vertexShader:waveVertexShader,fragmentShader:ditherFragmentShader});composer.addPass(ditherPass);window.addEventListener('resize',()=>{const width=window.innerWidth;const height=window.innerHeight;renderer.setSize(width,height);composer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();waveUniforms.resolution.value.set(width,height);ditherPass.uniforms.resolution.value.set(width,height);});window.addEventListener('mousemove',(e)=>{waveUniforms.mousePos.value.set(e.clientX,e.clientY);});const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);waveUniforms.time.value=clock.getElapsedTime();composer.render();}animate();
-    </script>
+    <script>
+        // --- ШЕЙДЕРЫ ---
+        const vertexShader = `
+        precision highp float;
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+        `;
+
+        const fragmentShader = `
+        precision highp float;
+
+        uniform float iTime;
+        uniform vec3  iResolution;
+        
+        uniform bool enableTop;
+        uniform bool enableMiddle;
+        uniform bool enableBottom;
+        
+        uniform int topLineCount;
+        uniform int middleLineCount;
+        uniform int bottomLineCount;
+        
+        uniform float topLineDistance;
+        uniform float middleLineDistance;
+        uniform float bottomLineDistance;
+        
+        uniform vec3 topWavePosition;
+        uniform vec3 middleWavePosition;
+        uniform vec3 bottomWavePosition;
+        
+        uniform vec2 iMouse;
+        uniform bool interactive;
+        uniform float bendRadius;
+        uniform float bendStrength;
+        uniform float bendInfluence;
+        
+        uniform bool parallax;
+        uniform float parallaxStrength;
+        uniform vec2 parallaxOffset;
+        
+        uniform vec3 lineGradient[8];
+        uniform int lineGradientCount;
+
+        // Цвета по умолчанию
+        const vec3 BLACK = vec3(0.0);
+        const vec3 PINK  = vec3(233.0, 71.0, 245.0) / 255.0;
+        const vec3 BLUE  = vec3(47.0,  75.0, 162.0) / 255.0;
+
+        mat2 rotate(float r) {
+            return mat2(cos(r), sin(r), -sin(r), cos(r));
+        }
+
+        vec3 background_color(vec2 uv) {
+            vec3 col = vec3(0.0);
+            float y = sin(uv.x - 0.2) * 0.3 - 0.1;
+            float m = uv.y - y;
+            col += mix(BLUE, BLACK, smoothstep(0.0, 1.0, abs(m)));
+            col += mix(PINK, BLACK, smoothstep(0.0, 1.0, abs(m - 0.8)));
+            return col * 0.5;
+        }
+
+        vec3 getLineColor(float t, vec3 baseColor) {
+            if (lineGradientCount <= 0) return baseColor;
+            vec3 gradientColor;
+            if (lineGradientCount == 1) {
+                gradientColor = lineGradient[0];
+            } else {
+                float clampedT = clamp(t, 0.0, 0.9999);
+                float scaled = clampedT * float(lineGradientCount - 1);
+                int idx = int(floor(scaled));
+                float f = fract(scaled);
+                int idx2 = min(idx + 1, lineGradientCount - 1);
+                gradientColor = mix(lineGradient[idx], lineGradient[idx2], f);
+            }
+            return gradientColor * 0.5;
+        }
+
+        float wave(vec2 uv, float offset, vec2 screenUv, vec2 mouseUv, bool shouldBend) {
+            float time = iTime; 
+            float x_offset   = offset;
+            float x_movement = time * 0.1;
+            float amp        = sin(offset + time * 0.2) * 0.3;
+            float y          = sin(uv.x + x_offset + x_movement) * amp;
+
+            if (shouldBend) {
+                vec2 d = screenUv - mouseUv;
+                float influence = exp(-dot(d, d) * bendRadius); 
+                float bendOffset = (mouseUv.y - screenUv.y) * influence * bendStrength * bendInfluence;
+                y += bendOffset;
+            }
+
+            float m = uv.y - y;
+            return 0.0175 / max(abs(m) + 0.01, 1e-3) + 0.01;
+        }
+
+        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            vec2 baseUv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
+            baseUv.y *= -1.0;
+            
+            if (parallax) {
+                baseUv += parallaxOffset;
+            }
+
+            vec3 col = vec3(0.0);
+            vec3 b = lineGradientCount > 0 ? vec3(0.0) : background_color(baseUv);
+
+            vec2 mouseUv = vec2(0.0);
+            if (interactive) {
+                mouseUv = (2.0 * iMouse - iResolution.xy) / iResolution.y;
+                mouseUv.y *= -1.0;
+            }
+            
+            // Оптимизация: уменьшаем количество итераций циклов, если тормозит
+            if (enableBottom) {
+                for (int i = 0; i < 20; ++i) { 
+                    if (i >= bottomLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(bottomLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, b);
+                    
+                    float angle = bottomWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    col += lineCol * wave(
+                        ruv + vec2(bottomLineDistance * fi + bottomWavePosition.x, bottomWavePosition.y),
+                        1.5 + 0.2 * fi, baseUv, mouseUv, interactive
+                    ) * 0.2;
+                }
+            }
+
+            if (enableMiddle) {
+                for (int i = 0; i < 20; ++i) {
+                    if (i >= middleLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(middleLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, b);
+                    
+                    float angle = middleWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    col += lineCol * wave(
+                        ruv + vec2(middleLineDistance * fi + middleWavePosition.x, middleWavePosition.y),
+                        2.0 + 0.15 * fi, baseUv, mouseUv, interactive
+                    );
+                }
+            }
+
+            if (enableTop) {
+                for (int i = 0; i < 20; ++i) {
+                    if (i >= topLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(topLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, b);
+                    
+                    float angle = topWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    ruv.x *= -1.0;
+                    col += lineCol * wave(
+                        ruv + vec2(topLineDistance * fi + topWavePosition.x, topWavePosition.y),
+                        1.0 + 0.2 * fi, baseUv, mouseUv, interactive
+                    ) * 0.1;
+                }
+            }
+
+            fragColor = vec4(col, 1.0);
+        }
+
+        void main() {
+            vec4 color = vec4(0.0);
+            mainImage(color, gl_FragCoord.xy);
+            gl_FragColor = color;
+        }
+        `;
+
+        function initBackground() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            camera.position.z = 1;
+
+            const renderer = new THREE.WebGLRenderer({ 
+                antialias: false, // Отключаем для скорости
+                alpha: false,
+                powerPreference: "high-performance"
+            });
+            
+            // ВАЖНО: Ставим PixelRatio = 1 для производительности. 
+            // Если ставить window.devicePixelRatio (который может быть 3 на айфонах),
+            // полноэкранный шейдер убьет FPS.
+            renderer.setPixelRatio(1); 
+            
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const config = {
+                topLineCount: 6,
+                middleLineCount: 6,
+                bottomLineCount: 6,
+                animationSpeed: 1.0,
+                interactive: false,
+                parallax: false
+            };
+
+            const uniforms = {
+                iTime: { value: 0 },
+                iResolution: { value: new THREE.Vector3(1, 1, 1) },
+                
+                enableTop: { value: true },
+                enableMiddle: { value: true },
+                enableBottom: { value: true },
+                
+                topLineCount: { value: config.topLineCount },
+                middleLineCount: { value: config.middleLineCount },
+                bottomLineCount: { value: config.bottomLineCount },
+
+                topLineDistance: { value: 0.05 },
+                middleLineDistance: { value: 0.05 },
+                bottomLineDistance: { value: 0.05 },
+
+                topWavePosition: { value: new THREE.Vector3(10.0, 0.5, -0.4) },
+                middleWavePosition: { value: new THREE.Vector3(5.0, 0.0, 0.2) },
+                bottomWavePosition: { value: new THREE.Vector3(2.0, -0.7, 0.4) },
+
+                iMouse: { value: new THREE.Vector2(-1000, -1000) },
+                interactive: { value: config.interactive },
+                bendRadius: { value: 5.0 },
+                bendStrength: { value: -0.5 },
+                bendInfluence: { value: 0 },
+
+                parallax: { value: config.parallax },
+                parallaxStrength: { value: 0.2 },
+                parallaxOffset: { value: new THREE.Vector2(0, 0) },
+
+                lineGradient: { value: new Array(8).fill(0).map(() => new THREE.Vector3(1, 1, 1)) },
+                lineGradientCount: { value: 0 }
+            };
+
+            // Градиент (Cyan -> Blue)
+            const colors = ["#22d3ee", "#3b82f6"]; 
+            uniforms.lineGradientCount.value = colors.length;
+            colors.forEach((hex, i) => {
+                const c = new THREE.Color(hex);
+                uniforms.lineGradient.value[i].set(c.r, c.g, c.b);
+            });
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const material = new THREE.ShaderMaterial({
+                uniforms,
+                vertexShader,
+                fragmentShader,
+                depthWrite: false, // Оптимизация
+                depthTest: false   // Оптимизация
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            function resize() {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                renderer.setSize(width, height);
+                uniforms.iResolution.value.set(width, height, 1);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const mouseParams = {
+                target: new THREE.Vector2(-1000, -1000),
+                current: new THREE.Vector2(-1000, -1000),
+                targetInfl: 0,
+                currentInfl: 0,
+                targetParallax: new THREE.Vector2(0,0),
+                currentParallax: new THREE.Vector2(0,0)
+            };
+
+            // window.addEventListener('mousemove', (e) => {
+            //     const rect = renderer.domElement.getBoundingClientRect();
+            //     const x = e.clientX;
+            //     const y = e.clientY;
+            //     // Здесь dpr всегда 1, так как мы его зафиксировали выше
+            //     const dpr = 1; 
+                
+            //     mouseParams.target.set(x * dpr, (rect.height - y) * dpr);
+            //     mouseParams.targetInfl = 1.0;
+
+            //     const cx = window.innerWidth / 2;
+            //     const cy = window.innerHeight / 2;
+            //     mouseParams.targetParallax.set(
+            //         ((e.clientX - cx) / window.innerWidth) * 0.2, 
+            //         -((e.clientY - cy) / window.innerHeight) * 0.2
+            //     );
+            // });
+
+            // window.addEventListener('mouseout', () => {
+            //     mouseParams.targetInfl = 0.0;
+            // });
+
+            const clock = new THREE.Clock();
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                uniforms.iTime.value = clock.getElapsedTime() * config.animationSpeed;
+
+                // const damp = 0.05;
+                // mouseParams.current.lerp(mouseParams.target, damp);
+                // uniforms.iMouse.value.copy(mouseParams.current);
+
+                // mouseParams.currentInfl += (mouseParams.targetInfl - mouseParams.currentInfl) * damp;
+                // uniforms.bendInfluence.value = mouseParams.currentInfl;
+                
+                // mouseParams.currentParallax.lerp(mouseParams.targetParallax, damp);
+                // uniforms.parallaxOffset.value.copy(mouseParams.currentParallax);
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initBackground);
+        } else {
+            initBackground();
+        }
+    </script> 
 </body>
 </html>

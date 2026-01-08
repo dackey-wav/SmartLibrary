@@ -2,7 +2,7 @@ from datetime import timedelta, timezone, datetime, date
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, text, select, exists
+from sqlalchemy import or_, text, select, exists, case
 from . import models
 
 import jwt
@@ -173,7 +173,7 @@ def create_reservation(db: Session, reservation_data):
 def return_reservation(db: Session, reservation_id: int):
     reservation = db.query(models.Reservation).filter(
         models.Reservation.id == reservation_id,
-        models.Reservation.status == "active"
+        models.Reservation.status != "returned"
     ).first()
     
     if not reservation:
@@ -188,3 +188,18 @@ def return_reservation(db: Session, reservation_id: int):
     db.commit()
     db.refresh(reservation)
     return reservation
+
+def get_user_history(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    status_order = case(
+    (models.Reservation.status == "overdue", 1),
+    (models.Reservation.status == "active", 2),
+    (models.Reservation.status == "returned", 3),
+    else_=4  
+    )
+
+    return db.query(models.Reservation).options(
+        joinedload(models.Reservation.book).joinedload(models.Book.author),
+        joinedload(models.Reservation.book).joinedload(models.Book.genre)
+    ).filter(
+        models.Reservation.user_id == user_id
+    ).order_by(status_order, models.Reservation.reserve_date.desc()).offset(skip).limit(limit).all()

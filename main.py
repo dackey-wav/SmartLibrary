@@ -8,6 +8,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
+from datetime import timedelta, timezone, datetime
 
 from sqlalchemy.orm import Session
 from app import crud, models, schemas
@@ -94,6 +95,19 @@ def read_books(
     books, total_items = crud.get_books(
         db, skip=skip, limit=limit, genre_id=genre_id,
         author_id=author_id, search=search, sort=sort)
+    
+    user = get_current_user()
+    if user:
+        analytics = models.SearchEvents(
+            user_id=user.id,
+            genre_id=genre_id,
+            author_id=author_id,
+            query_text=search,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.add(analytics)
+        db.commit()
+        db.refresh(analytics)
 
     return {"items": books, "total_items": total_items, "skip": skip, "limit": limit}
 
@@ -121,9 +135,11 @@ def read_authors(db: Session = Depends(get_db)):
     authors = crud.get_authors(db)
     return authors
 
+
 @app.get("/api/me", response_model=schemas.User)
 def read_users_me(current_user: Annotated[schemas.User, Depends(get_current_user)]):
     return current_user
+
 
 @app.post("/token", response_model=schemas.Token)
 def login(
@@ -143,6 +159,7 @@ def login(
     )
     return schemas.Token(access_token=access_token, token_type="bearer")
 
+
 @app.post("/api/register", response_model=schemas.User)
 def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
     existing_user = crud.get_user_by_email(db, user_data.email)
@@ -151,9 +168,11 @@ def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
     user = crud.create_user(db, user_data)
     return user
 
+
 @app.get("/")
 def index():
     return FileResponse(path="static/index.html")
+
 
 @app.get("/login")
 def login_page():
@@ -175,7 +194,7 @@ def create_loan(
     return new_reservation
 
 
-@app.patch("/api/reservations/{id}/return", response_model=schemas.Reservation)
+@app.patch("/api/reservations/{reservation_id}/return", response_model=schemas.Reservation)
 def return_loan(
     reservation_id: int,
     current_user: Annotated[schemas.User, Depends(get_current_user)],
@@ -190,4 +209,19 @@ def return_loan(
     result = crud.return_reservation(db, reservation_id)
     if not result:
         raise HTTPException(status_code=400, detail="Cannot return this reservation")
+    return result
+
+
+@app.get("/api/users/{user_id}/history/", response_model=list[schemas.Reservation])
+def read_user_reservations(
+    user_id: int,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    result = crud.get_user_history(db, user_id)
+    if not result:
+        raise HTTPException(status_code=400, detail="Cannot return this user history")
     return result

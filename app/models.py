@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Annotated
-from datetime import datetime, date
+from datetime import date
 from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
@@ -115,3 +115,18 @@ class Reservation(Base):
 
     book: Mapped[Book] = relationship(back_populates="reservations")
     user: Mapped[User] = relationship(back_populates="reservations")
+
+class SearchEvents(Base):
+    "History logging for stats"
+    __tablename__ = "search_events"
+
+    id: Mapped[intpk]
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="SET NULL"), nullable=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"))
+    query_text: Mapped[str | None] = mapped_column(String(511), nullable=True)
+    created_at: Mapped[date] = mapped_column(Date, nullable=False, server_default=text("TIMEZONE('utc', now())"))
+
+    book: Mapped[Book] = relationship(back_populates="reservations")
+    user: Mapped[User] = relationship(back_populates="reservations")
+    genre: Mapped[Genre | None] = relationship(back_populates="books")
