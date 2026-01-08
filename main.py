@@ -83,9 +83,10 @@ def read_user(
 
 @app.get("/api/books/", response_model=schemas.BookPage)
 def read_books(
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 8,
-    db: Session = Depends(get_db), 
     genre_id: int | None = None,
     author_id: int | None = None,
     search: str | None = None,
@@ -96,10 +97,9 @@ def read_books(
         db, skip=skip, limit=limit, genre_id=genre_id,
         author_id=author_id, search=search, sort=sort)
     
-    user = get_current_user()
-    if user:
+    if genre_id or author_id or search:
         analytics = models.SearchEvents(
-            user_id=user.id,
+            user_id=current_user.id,
             genre_id=genre_id,
             author_id=author_id,
             query_text=search,
@@ -107,7 +107,6 @@ def read_books(
         )
         db.add(analytics)
         db.commit()
-        db.refresh(analytics)
 
     return {"items": books, "total_items": total_items, "skip": skip, "limit": limit}
 
@@ -213,7 +212,7 @@ def return_loan(
 
 
 @app.get("/api/users/{user_id}/history/", response_model=list[schemas.Reservation])
-def read_user_reservations(
+def read_user_history(
     user_id: int,
     current_user: Annotated[schemas.User, Depends(get_current_user)],
     db: Session = Depends(get_db)
@@ -222,6 +221,20 @@ def read_user_reservations(
         raise HTTPException(status_code=403, detail="Access denied")
     
     result = crud.get_user_history(db, user_id)
+    if not result:
+        raise HTTPException(status_code=400, detail="Cannot return this user history")
+    return result
+
+@app.get("/api/users/{user_id}/analytics/", response_model=schemas.Statistics)
+def read_user_stats(
+    user_id: int,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    result = crud.get_user_stats(db, user_id)
     if not result:
         raise HTTPException(status_code=400, detail="Cannot return this user history")
     return result

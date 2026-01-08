@@ -2,7 +2,7 @@ from datetime import timedelta, timezone, datetime, date
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, text, select, exists, case
+from sqlalchemy import or_, text, select, exists, case, func, desc
 from . import models
 
 import jwt
@@ -203,3 +203,73 @@ def get_user_history(db: Session, user_id: int, skip: int = 0, limit: int = 100)
     ).filter(
         models.Reservation.user_id == user_id
     ).order_by(status_order, models.Reservation.reserve_date.desc()).offset(skip).limit(limit).all()
+
+def get_user_stats(db: Session, user_id: int, period: int = 30):
+    cutoff_date = date.today() - timedelta(days=period)
+
+    stmt_genre_count = (
+        select(
+            models.SearchEvents.genre_id
+        )
+    ).options(
+        joinedload(models.SearchEvents.genre).joinedload(models.Genre.books)
+    ).where(
+        models.SearchEvents.user_id == user_id,
+        models.SearchEvents.created_at >= cutoff_date
+    ).group_by(
+        models.SearchEvents.genre_id
+    ).order_by(desc(func.count(models.SearchEvents.genre_id))).limit(1)
+
+    stmt_author_count = (
+        select(
+            models.SearchEvents.author_id
+        )
+    ).options(
+        joinedload(models.SearchEvents.author).joinedload(models.Author.books)
+    ).where(
+        models.SearchEvents.user_id == user_id,
+        models.SearchEvents.created_at >= cutoff_date
+    ).group_by(
+        models.SearchEvents.author_id
+    ).order_by(desc(func.count(models.SearchEvents.author_id))).limit(1)
+    
+    top_genre = db.execute(stmt_genre_count).scalar()
+    top_author = db.execute(stmt_author_count).scalar()
+
+    total_queries = db.query(models.SearchEvents).filter(
+        models.SearchEvents.user_id == user_id
+    ).count()
+
+    total_read = db.query(models.Reservation).filter(
+        models.Reservation.user_id == user_id,
+        models.Reservation.status == "returned"
+    ).count()
+
+    on_hand = db.query(models.Reservation).filter(
+        models.Reservation.user_id == user_id,
+        models.Reservation.status.in_('active', 'overdue')
+    ).count()
+
+    stmt_fav_genre = (
+        select(
+            models.SearchEvents.genre_id
+        )
+    ).options(
+        joinedload(models.SearchEvents.genre).joinedload(models.Genre.name)
+    ).where(
+        models.Reservation.user_id == user_id,
+        models.Reservation.status == 'returned'
+    ).group_by(
+        models.Reservation.genre_id
+    ).order_by(desc(func.count(models.Reservation.genre_id))).limit(1)
+
+    fav_genre = db.execute(stmt_fav_genre).scalar()
+
+    return {
+        "top_author": top_author or "N/A",
+        "top_genre": top_genre or "N/A",
+        "total_queries": total_queries,
+        "total_read": total_read,
+        "on_hand": on_hand,
+        "fav_genre": fav_genre or "N/A"
+    }

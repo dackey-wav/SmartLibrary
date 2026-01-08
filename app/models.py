@@ -50,8 +50,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
 
-    role: Mapped[Role] = relationship(back_populates="users")
+    role: Mapped[Role] = relationship(back_populates="user")
     reservations: Mapped[list["Reservation"]] = relationship(back_populates="user")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="user")
 
 
 class Genre(Base):
@@ -62,6 +63,7 @@ class Genre(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
     books: Mapped[list["Book"]] = relationship(back_populates="genre")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="genre")
 
 
 class Author(Base):
@@ -74,6 +76,7 @@ class Author(Base):
     nationality: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     books: Mapped[list["Book"]] = relationship(back_populates="author")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="author")
 
 
 class Book(Base):
@@ -123,10 +126,10 @@ class SearchEvents(Base):
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="SET NULL"), nullable=True)
-    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"))
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"), nullable=True)
     query_text: Mapped[str | None] = mapped_column(String(511), nullable=True)
     created_at: Mapped[date] = mapped_column(Date, nullable=False, server_default=text("TIMEZONE('utc', now())"))
 
-    book: Mapped[Book] = relationship(back_populates="reservations")
-    user: Mapped[User] = relationship(back_populates="reservations")
-    genre: Mapped[Genre | None] = relationship(back_populates="books")
+    user: Mapped[User] = relationship(back_populates="search_events")
+    genre: Mapped[Genre | None] = relationship(back_populates="search_events")
+    author: Mapped[Author | None] = relationship(back_populates="search_events")

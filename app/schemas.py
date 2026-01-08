@@ -87,3 +87,14 @@ class ReservationCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class Statistics(BaseModel):
+    top_author: str
+    top_genre: str
+    total_queries: int
+    total_read: int
+    on_hand: int
+    fav_genre: str
+
+    class Config:
+            from_attributes = True
