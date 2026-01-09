@@ -50,7 +50,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
 
-    role: Mapped[Role] = relationship(back_populates="user")
+    role: Mapped[Role] = relationship(back_populates="users")
     reservations: Mapped[list["Reservation"]] = relationship(back_populates="user")
     search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="user")
 

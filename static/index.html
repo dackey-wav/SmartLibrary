@@ -188,15 +188,15 @@
                     <div class="grid grid-cols-3 gap-6 h-32 shrink-0">
                         <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
                             <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
-                            <div class="flex items-baseline gap-2"><span class="text-4xl font-bold">42</span><span class="text-xs text-white/20">BOOKS</span></div>
+                            <div class="flex items-baseline gap-2"><span class="text-4xl font-bold" data-stat="total-read">0</span><span class="text-xs text-white/20">BOOKS</span></div>
                         </div>
                         <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
                             <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
-                            <div class="flex items-baseline gap-2"><span id="active-count" class="text-4xl font-bold">--</span><span class="text-xs text-white/20">ACTIVE</span></div>
+                            <div class="flex items-baseline gap-2"><span id="active-count" class="text-4xl font-bold" data-stat="on-hand">0</span><span class="text-xs text-white/20">ACTIVE</span></div>
                         </div>
                         <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
                             <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
-                            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold truncate">SCI-FI</span></div>
+                            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold truncate" data-stat="fav-genre">N/A</span></div>
                         </div>
                     </div>
                 </div>
@@ -272,7 +272,7 @@
                     </div>
                 </div>
 
-                <div id="view-history" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none transition-none">
+                <div id="view-history" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none">
                     
                     <div class="h-32 shrink-0 grid grid-cols-12 gap-6">
                         <div class="col-span-4 glass-panel rounded-2xl p-6 flex flex-col justify-center">
@@ -281,32 +281,17 @@
                         </div>
 
                         <div class="col-span-8 grid grid-cols-3 gap-6">
-                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
                                 <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_SEARCH_GENRE</span>
-                                <div class="text-2xl font-bold text-cyan-400">CYBERPUNK</div>
-                                <div class="w-full bg-white/10 h-1 mt-2 rounded-full overflow-hidden">
-                                    <div class="bg-cyan-400 h-full w-[85%]"></div>
-                                </div>
-                                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
-                                </div>
+                                <div class="text-2xl font-bold text-cyan-400" data-stat="top-genre">N/A</div>
                             </div>
-
-                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
                                 <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_AUTHOR</span>
-                                <div class="text-xl font-bold text-purple-400 truncate">P.K. DICK</div>
-                                <div class="text-[10px] text-white/30 mt-1">42 SEARCH QUERIES</div>
-                                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                </div>
+                                <div class="text-xl font-bold text-purple-400 truncate" data-stat="top-author">N/A</div>
                             </div>
-
-                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between border-r-2 border-r-white/10">
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
                                 <span class="text-[10px] text-white/40 font-mono tracking-widest">TOTAL_QUERIES</span>
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-3xl font-bold text-white">1,024</span>
-                                    <span class="text-[10px] text-green-400">^12%</span>
-                                </div>
+                                <span class="text-3xl font-bold text-white" data-stat="total-queries">0</span>
                             </div>
                         </div>
                     </div>
@@ -319,11 +304,7 @@
                             <div class="col-span-2">Status</div>
                             <div class="col-span-2 text-right">Action</div>
                         </div>
-
-                        <div class="overflow-y-auto custom-scrollbar flex-1 p-4 space-y-2" id="history-list-container">
-                            </div>
-                        
-                        <div class="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#0a0a0f] to-transparent pointer-events-none"></div>
+                        <div class="overflow-y-auto custom-scrollbar flex-1 p-4 space-y-2" id="history-list-container"></div>
                     </div>
                 </div>
             </div>
@@ -382,13 +363,13 @@
         let CURRENT_USER_ID = null; // Будет установлено после fetchUserData
         
         const DOM = {
-            views: {
-                dashboard: document.getElementById('view-dashboard'),
+            views: { 
+                dashboard: document.getElementById('view-dashboard'), 
                 catalog: document.getElementById('view-catalog'),
                 history: document.getElementById('view-history')
             },
-            navs: {
-                dashboard: document.getElementById('nav-dashboard'),
+            navs: { 
+                dashboard: document.getElementById('nav-dashboard'), 
                 catalog: document.getElementById('nav-catalog'),
                 history: document.getElementById('nav-history')
             },
@@ -449,27 +430,34 @@
         // --- 1. USER & DASHBOARD DATA ---
         async function fetchUserData() {
             try {
-                // Сначала получаем данные текущего пользователя
                 const userRes = await apiFetch('/api/me');
-                if (!userRes || !userRes.ok) {
-                    throw new Error('User fetch failed');
-                }
+                if (!userRes || !userRes.ok) throw new Error('User fetch failed');
                 const user = await userRes.json();
                 
-                // Теперь знаем user_id
                 CURRENT_USER_ID = user.id;
-                
                 DOM.userName.textContent = user.name.toUpperCase();
                 const roleName = user.role ? user.role.name : "UNKNOWN";
                 DOM.userDetails.textContent = `ROLE: ${roleName.toUpperCase()} // ID: #${user.id}`;
 
-                // Получаем резервации
                 const resRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/reservations/`);
-                if (!resRes || !resRes.ok) {
-                    throw new Error('Reservations fetch failed');
-                }
+                if (!resRes || !resRes.ok) throw new Error('Reservations fetch failed');
                 const reservations = await resRes.json();
                 
+                // Обновляем статистику из /analytics/
+                const statsRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/analytics/`);
+                if (statsRes && statsRes.ok) {
+                    const stats = await statsRes.json();
+                    
+                    const dashboardView = document.getElementById('view-dashboard');
+                    const totalReadEl = dashboardView.querySelector('[data-stat="total-read"]');
+                    const onHandEl = dashboardView.querySelector('[data-stat="on-hand"]');
+                    const favGenreEl = dashboardView.querySelector('[data-stat="fav-genre"]');
+                    
+                    if (totalReadEl) totalReadEl.textContent = stats.total_read || "0";
+                    if (onHandEl) onHandEl.textContent = stats.on_hand || "0";
+                    if (favGenreEl) favGenreEl.textContent = stats.fav_genre || "N/A";
+                }
+
                 DOM.activeCount.textContent = reservations.length.toString().padStart(2, '0');
                 
                 initCards(reservations.map(r => ({
@@ -510,10 +498,10 @@
                 if (catalogState.search) params.append('search', catalogState.search); // Теперь бэк это поймет
                 if (catalogState.sort && catalogState.sort !== 'default') params.append('sort', catalogState.sort);
 
-                const response = await fetch(`/api/books/?${params}`);
-                if (!response.ok) throw new Error('Books fetch failed');
+                const response = await apiFetch(`/api/books/?${params}`);
+                if (!response || !response.ok) throw new Error('Books fetch failed');
                 
-                const data = await response.json(); 
+                const data = await response.json();
                 
                 catalogState.totalItems = data.total_items;
                 
@@ -724,7 +712,6 @@
             gsap.to(otherViews, { opacity: 0, pointerEvents: 'none', duration: 0.3 });
             gsap.to(activeView, { opacity: 1, pointerEvents: 'auto', duration: 0.3, delay: 0.1 });
 
-            // Навигация
             Object.values(DOM.navs).forEach(el => {
                 el.classList.remove('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
                 el.classList.add('text-white/60');
@@ -736,14 +723,13 @@
                 activeNav.classList.add('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
             }
 
-            // Логика подгрузки данных
             if (viewName === 'catalog' && !isCatalogInitialized) {
                 fetchBooks(true);
                 initDropdowns();
                 isCatalogInitialized = true;
             }
             if (viewName === 'history') fetchHistory();
-            if (viewName === 'dashboard') fetchUserData();
+            // if (viewName === 'dashboard') fetchUserData();
         }
 
         function updateNav(active) {
@@ -802,7 +788,9 @@
         }
 
         setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('ru-RU'), 1000);
-        document.addEventListener('DOMContentLoaded', fetchUserData);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUserData();
+        });
 
         // --- 7. RESERVATION LOGIC ---
         let currentBookId = null;
@@ -919,11 +907,14 @@
             try {
                 const res = await apiFetch(`/api/users/${CURRENT_USER_ID}/history/`);
                 let reservations = [];
-                if(res && res.ok) {
-                    reservations = await res.json();
-                }
+                if(res && res.ok) reservations = await res.json();
+
+                const statsRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/analytics/`);
+                let stats = {};
+                if(statsRes && statsRes.ok) stats = await statsRes.json();
 
                 renderHistoryRows(reservations);
+                updateHistoryStats(stats);
             } catch (e) {
                 console.error("History error", e);
             }
@@ -936,28 +927,16 @@
             }
 
             let html = '';
-            
             items.forEach(item => {
-                // Определяем стили статуса
                 let statusStyle = "";
                 let actionBtn = "";
                 
                 if(item.status === 'overdue') {
-                    statusStyle = "text-red-400 bg-red-400/10 border border-red-400/20"; // Overdue
-                    actionBtn = `
-                        <button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold bg-red-500/80 text-white border border-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all uppercase tracking-wider">
-                            Return_
-                        </button>
-                        `;
-                }
-                else if(item.status === 'active')
-                {
+                    statusStyle = "text-red-400 bg-red-400/10 border border-red-400/20";
+                    actionBtn = `<button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold bg-red-500/80 text-white border border-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all uppercase tracking-wider">Return_</button>`;
+                } else if(item.status === 'active') {
                     statusStyle = "text-green-400 bg-green-400/10 border border-green-400/20";
-                    actionBtn = `
-                        <button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold border border-white/20 hover:bg-cyan-400 hover:text-black hover:border-cyan-400 transition-all uppercase tracking-wider">
-                            Return_
-                        </button>
-                    `;
+                    actionBtn = `<button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold border border-white/20 hover:bg-cyan-400 hover:text-black hover:border-cyan-400 transition-all uppercase tracking-wider">Return_</button>`;
                 } else {
                     statusStyle = "text-white/40 bg-white/5 border border-white/10";
                     actionBtn = `<span class="text-[10px] text-white/20 font-mono">ARCHIVED</span>`;
@@ -975,33 +954,34 @@
                     <div class="col-span-2 text-xs text-white/60 font-mono">${dateTaken}</div>
                     <div class="col-span-2 text-xs text-white/60 font-mono">${dateReturn}</div>
                     <div class="col-span-2">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${statusStyle}">
-                            ${item.status}
-                        </span>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${statusStyle}">${item.status}</span>
                     </div>
-                    <div class="col-span-2 text-right">
-                        ${actionBtn}
-                    </div>
-                </div>
-                `;
+                    <div class="col-span-2 text-right">${actionBtn}</div>
+                </div>`;
             });
-
             DOM.historyList.innerHTML = html;
         }
 
-        // Функция возврата книги
-        async function returnBook(reservationId) {
-            if(!confirm("CONFIRM RETURN? This action translates to blockchain ledger.")) return;
+        function updateHistoryStats(stats) {
+            const historyView = document.getElementById('view-history');
+            
+            const topGenreEl = historyView.querySelector('[data-stat="top-genre"]');
+            if (topGenreEl) topGenreEl.textContent = stats.top_genre || "N/A";
+            
+            const topAuthorEl = historyView.querySelector('[data-stat="top-author"]');
+            if (topAuthorEl) topAuthorEl.textContent = stats.top_author || "N/A";
+            
+            const totalQueriesEl = historyView.querySelector('[data-stat="total-queries"]');
+            if (totalQueriesEl) totalQueriesEl.textContent = stats.total_queries || "0";
+        }
 
+        async function returnBook(reservationId) {
+            if(!confirm("CONFIRM RETURN?")) return;
             try {
-                const res = await apiFetch(`/api/reservations/${reservationId}/return`, {
-                    method: 'PATCH'
-                });
-                
+                const res = await apiFetch(`/api/reservations/${reservationId}/return`, { method: 'PATCH' });
                 if(res.ok) {
-                    // Обновляем список без перезагрузки страницы
-                    fetchHistory(); 
-                    fetchUserData(); // Обновить каунтер в сайдбаре
+                    fetchHistory();
+                    fetchUserData();
                 } else {
                     alert("SYSTEM ERROR: Cannot process return.");
                 }
@@ -1009,7 +989,7 @@
                 console.error(e);
             }
         }
-    </script>
+        </script>
 
     <script>
         // --- ШЕЙДЕРЫ ---

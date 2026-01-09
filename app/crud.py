@@ -204,72 +204,81 @@ def get_user_history(db: Session, user_id: int, skip: int = 0, limit: int = 100)
         models.Reservation.user_id == user_id
     ).order_by(status_order, models.Reservation.reserve_date.desc()).offset(skip).limit(limit).all()
 
-def get_user_stats(db: Session, user_id: int, period: int = 30):
-    cutoff_date = date.today() - timedelta(days=period)
+def get_user_stats(db, user_id: int, period_days: int = 30):
+    cutoff = date.today() - timedelta(days=period_days)
 
-    stmt_genre_count = (
-        select(models.Genre.name, models.SearchEvents.genre_id == models.Genre.id)
-        .join(models.SearchEvents)
+    stmt_top_genre = (
+        select(models.Genre.name)
+        .select_from(models.SearchEvents)
+        .join(models.Genre, models.SearchEvents.genre_id == models.Genre.id)
         .where(
             models.SearchEvents.user_id == user_id,
-            models.SearchEvents.created_at >= cutoff_date,
-            models.SearchEvents.genre_id.isnot(None)
+            models.SearchEvents.created_at >= cutoff,
+            models.SearchEvents.genre_id.isnot(None),
         )
         .group_by(models.Genre.name)
         .order_by(func.count().desc())
         .limit(1)
     )
+    top_genre = db.execute(stmt_top_genre).scalar()
 
-    stmt_author_count = (
-        select(models.Author.name, models.SearchEvents.author_id == models.Author.id)
-        .join(models.SearchEvents)
+    stmt_top_author = (
+        select(models.Author.name)
+        .select_from(models.SearchEvents)
+        .join(models.Author, models.SearchEvents.author_id == models.Author.id)
         .where(
             models.SearchEvents.user_id == user_id,
-            models.SearchEvents.created_at >= cutoff_date,
-            models.SearchEvents.author_id.isnot(None)
+            models.SearchEvents.created_at >= cutoff,
+            models.SearchEvents.author_id.isnot(None),
         )
         .group_by(models.Author.name)
         .order_by(func.count().desc())
         .limit(1)
     )
-    
-    top_genre = db.execute(stmt_genre_count).scalar()
-    top_author = db.execute(stmt_author_count).scalar()
+    top_author = db.execute(stmt_top_author).scalar()
 
-    total_queries = db.query(models.SearchEvents).filter(
-        models.SearchEvents.user_id == user_id
-    ).count()
+    total_queries = db.execute(
+        select(func.count()).select_from(models.SearchEvents).where(models.SearchEvents.user_id == user_id)
+    ).scalar() or 0
 
-    total_read = db.query(models.Reservation).filter(
-        models.Reservation.user_id == user_id,
-        models.Reservation.status == "returned"
-    ).count()
-
-    on_hand = db.query(models.Reservation).filter(
-        models.Reservation.user_id == user_id,
-        models.Reservation.status.in_('active', 'overdue')
-    ).count()
-
-    stmt_fav_genre = (
-        select(func.coalesce(models.Genre.name, "N/A"))
-        .join(models.Reservation.book)
-        .outerjoin(models.Book.genre)
+    total_read = db.execute(
+        select(func.count())
+        .select_from(models.Reservation)
         .where(
             models.Reservation.user_id == user_id,
-            models.Reservation.status == models.ReservationStatus.returned
+            models.Reservation.status == models.ReservationStatus.returned,
+        )
+    ).scalar() or 0
+
+    on_hand = db.execute(
+        select(func.count())
+        .select_from(models.Reservation)
+        .where(
+            models.Reservation.user_id == user_id,
+            models.Reservation.status.in_(['active', 'overdue']),
+        )
+    ).scalar() or 0
+
+    stmt_fav_genre = (
+        select(models.Genre.name)
+        .select_from(models.Reservation)
+        .join(models.Book, models.Reservation.book_id == models.Book.id)
+        .join(models.Genre, models.Book.genre_id == models.Genre.id)
+        .where(
+            models.Reservation.user_id == user_id,
+            models.Reservation.status == models.ReservationStatus.returned,
         )
         .group_by(models.Genre.name)
         .order_by(func.count().desc())
         .limit(1)
     )
-
     fav_genre = db.execute(stmt_fav_genre).scalar()
 
     return {
         "top_author": top_author or "N/A",
         "top_genre": top_genre or "N/A",
-        "total_queries": total_queries,
-        "total_read": total_read,
-        "on_hand": on_hand,
-        "fav_genre": fav_genre or "N/A"
+        "total_queries": int(total_queries),
+        "total_read": int(total_read),
+        "on_hand": int(on_hand),
+        "fav_genre": fav_genre or "N/A",
     }

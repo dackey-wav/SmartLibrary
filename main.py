@@ -221,7 +221,7 @@ def read_user_history(
         raise HTTPException(status_code=403, detail="Access denied")
     
     result = crud.get_user_history(db, user_id)
-    if not result:
+    if result is None:
         raise HTTPException(status_code=400, detail="Cannot return this user history")
     return result
 
