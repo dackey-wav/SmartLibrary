@@ -173,9 +173,9 @@ def index():
     return FileResponse(path="static/index.html")
 
 
-@app.get("/login")
-def login_page():
-    return FileResponse(path="static/login.html")
+# @app.get("/login")
+# def login_page():
+#     return FileResponse(path="static/login.html")
 
 
 @app.post("/api/reservations/", response_model=schemas.Reservation)
